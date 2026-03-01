@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wallet, Plus, ArrowUpCircle, ArrowDownCircle, Trash2, TrendingUp, PieChart } from "lucide-react";
+import { Wallet, Plus, ArrowUpCircle, ArrowDownCircle, Trash2, PieChart, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RPieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RPieChart, Pie, Cell } from "recharts";
 
 interface Transaction {
   id: string;
@@ -34,6 +34,7 @@ interface Budget {
 
 const categories = ["Alimentação", "Transporte", "Moradia", "Lazer", "Saúde", "Educação", "Assinaturas", "Salário", "Freelance", "Investimentos", "Outros"];
 const COLORS = ["hsl(153,100%,50%)", "hsl(200,80%,50%)", "hsl(280,70%,55%)", "hsl(40,90%,55%)", "hsl(0,72%,51%)", "hsl(180,60%,45%)", "hsl(320,70%,50%)", "hsl(120,50%,40%)"];
+const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 export default function FinancePage() {
   const { user } = useAuth();
@@ -46,22 +47,37 @@ export default function FinancePage() {
   const [budgetForm, setBudgetForm] = useState({ category: "Alimentação", limit: "" });
 
   const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
+  const [viewMonth, setViewMonth] = useState(now.getMonth() + 1);
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+
+  const isCurrentMonth = viewMonth === now.getMonth() + 1 && viewYear === now.getFullYear();
+
+  const goToPrevMonth = () => {
+    if (viewMonth === 1) { setViewMonth(12); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
+  };
+
+  const goToNextMonth = () => {
+    if (isCurrentMonth) return;
+    if (viewMonth === 12) { setViewMonth(1); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  };
 
   const fetchData = async () => {
     if (!user) return;
-    const startDate = `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`;
-    const endDate = `${currentYear}-${String(currentMonth + 1 > 12 ? 1 : currentMonth + 1).padStart(2, "0")}-01`;
+    const startDate = `${viewYear}-${String(viewMonth).padStart(2, "0")}-01`;
+    const nextMonth = viewMonth + 1 > 12 ? 1 : viewMonth + 1;
+    const nextYear = viewMonth + 1 > 12 ? viewYear + 1 : viewYear;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
     const [txRes, budgetRes] = await Promise.all([
       supabase.from("transactions").select("*").eq("user_id", user.id).gte("transaction_date", startDate).lt("transaction_date", endDate).order("transaction_date", { ascending: false }),
-      supabase.from("budgets").select("*").eq("user_id", user.id).eq("month", currentMonth).eq("year", currentYear),
+      supabase.from("budgets").select("*").eq("user_id", user.id).eq("month", viewMonth).eq("year", viewYear),
     ]);
     if (txRes.data) setTransactions(txRes.data);
     if (budgetRes.data) setBudgets(budgetRes.data);
   };
 
-  useEffect(() => { fetchData(); }, [user]);
+  useEffect(() => { fetchData(); }, [user, viewMonth, viewYear]);
 
   const income = transactions.filter((t) => t.type === "income").reduce((a, t) => a + Number(t.amount), 0);
   const expenses = transactions.filter((t) => t.type === "expense").reduce((a, t) => a + Number(t.amount), 0);
@@ -83,7 +99,7 @@ export default function FinancePage() {
   const createBudget = async () => {
     if (!user || !budgetForm.limit) return;
     await supabase.from("budgets").upsert({
-      user_id: user.id, category: budgetForm.category, monthly_limit: Number(budgetForm.limit), month: currentMonth, year: currentYear,
+      user_id: user.id, category: budgetForm.category, monthly_limit: Number(budgetForm.limit), month: viewMonth, year: viewYear,
     }, { onConflict: "user_id,category,month,year" });
     setBudgetForm({ category: "Alimentação", limit: "" });
     setBudgetDialogOpen(false);
@@ -95,7 +111,6 @@ export default function FinancePage() {
     fetchData();
   };
 
-  // Chart data
   const categoryData = Object.entries(
     transactions.filter((t) => t.type === "expense").reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + Number(t.amount); return acc; }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }));
@@ -134,6 +149,15 @@ export default function FinancePage() {
           </DialogContent>
         </Dialog>
       </motion.div>
+
+      {/* Month Navigator */}
+      <div className="flex items-center justify-center gap-4">
+        <Button variant="ghost" size="icon" onClick={goToPrevMonth}><ChevronLeft className="h-5 w-5" /></Button>
+        <span className="text-lg font-semibold text-foreground min-w-[180px] text-center">
+          {MONTH_NAMES[viewMonth - 1]} {viewYear}
+        </span>
+        <Button variant="ghost" size="icon" onClick={goToNextMonth} disabled={isCurrentMonth}><ChevronRight className="h-5 w-5" /></Button>
+      </div>
 
       <Tabs defaultValue="resumo">
         <TabsList className="bg-secondary border border-border">
@@ -181,7 +205,7 @@ export default function FinancePage() {
                 </div>
               </div>
             ))}
-            {transactions.length === 0 && <div className="text-center py-12 text-muted-foreground"><Wallet className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>Nenhuma transação este mês.</p></div>}
+            {transactions.length === 0 && <div className="text-center py-12 text-muted-foreground"><Wallet className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>Nenhuma transação neste mês.</p></div>}
           </div>
         </TabsContent>
 
