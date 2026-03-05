@@ -260,7 +260,6 @@ export default function FinancePage() {
                     <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="paid">Pago</SelectItem>
-                      <SelectItem value="pending">Pendente</SelectItem>
                       <SelectItem value="unpaid">Não Pago</SelectItem>
                     </SelectContent>
                   </Select>
@@ -441,9 +440,8 @@ export default function FinancePage() {
         <TabsContent value="transacoes" className="mt-4">
           <div className="space-y-2">
             {transactions.map((tx) => {
-              const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+               const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
                 paid: { label: "Pago", color: "bg-primary/15 text-primary border-primary/30", icon: <CheckCircle2 className="h-3 w-3" /> },
-                pending: { label: "Pendente", color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30", icon: <Clock className="h-3 w-3" /> },
                 unpaid: { label: "Não Pago", color: "bg-destructive/15 text-destructive border-destructive/30", icon: <AlertCircle className="h-3 w-3" /> },
               };
               const status = statusConfig[tx.payment_status] || statusConfig.paid;
