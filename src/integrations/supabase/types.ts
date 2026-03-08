@@ -533,6 +533,8 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          installment_count: number | null
+          installment_number: number | null
           is_recurring: boolean
           payment_method: string | null
           payment_status: string
@@ -550,6 +552,8 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          installment_count?: number | null
+          installment_number?: number | null
           is_recurring?: boolean
           payment_method?: string | null
           payment_status?: string
@@ -567,6 +571,8 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          installment_count?: number | null
+          installment_number?: number | null
           is_recurring?: boolean
           payment_method?: string | null
           payment_status?: string
