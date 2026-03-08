@@ -53,6 +53,7 @@ type PeriodFilter = "month" | "year" | "all";
 
 export default function InvestmentsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [investTxs, setInvestTxs] = useState<InvestmentTransaction[]>([]);

@@ -37,6 +37,7 @@ const emptyForm = { name: "", description: "", category: "personal", goal_type: 
 
 export default function GoalsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);

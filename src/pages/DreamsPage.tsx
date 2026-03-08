@@ -30,6 +30,7 @@ const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
 
 export default function DreamsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);

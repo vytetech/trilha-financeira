@@ -59,6 +59,7 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode }> = {
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
