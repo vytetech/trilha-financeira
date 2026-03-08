@@ -340,7 +340,13 @@ export default function FinancePage() {
     fetchData();
   };
 
-  const createCreditCard = async () => {
+  const deleteBudget = async (id: string) => {
+    await supabase.from("budgets").delete().eq("id", id);
+    fetchData();
+    toast({ title: "Orçamento removido" });
+  };
+
+
     if (!user || !cardForm.name) return;
     await supabase.from("credit_cards").insert({
       user_id: user.id,
