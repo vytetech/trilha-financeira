@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +15,10 @@ import { motion } from "framer-motion";
 import {
   Settings, User, Save, Shield, Bell, Palette, CreditCard, Key,
   Mail, Globe, Target, DollarSign, Calendar, AlertTriangle, Trash2,
-  Lock, Eye, EyeOff, CheckCircle2, Zap, Crown
+  Lock, Eye, EyeOff, CheckCircle2, Zap, Crown, Loader2, ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
