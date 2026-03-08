@@ -310,7 +310,11 @@ export default function HabitsPage() {
                 <span className="flex items-center gap-1"><Trophy className="h-3 w-3 text-yellow-400" /> {habit.best_streak}d</span>
               )}
               <span className="flex items-center gap-1"><Zap className="h-3 w-3" /> {habit.xp_reward} XP</span>
-              <Badge variant="outline" className="text-xs h-5">{freqLabels[habit.frequency]}</Badge>
+              <Badge variant="outline" className="text-xs h-5">
+                {habit.custom_days && habit.custom_days.length > 0
+                  ? habit.custom_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(", ")
+                  : freqLabels[habit.frequency]}
+              </Badge>
             </div>
 
             {/* Week heatmap */}
