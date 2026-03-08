@@ -33,6 +33,8 @@ interface Transaction {
   payment_status: string;
   due_date: string | null;
   credit_card_id: string | null;
+  installment_count: number;
+  installment_number: number;
 }
 
 interface Budget {
