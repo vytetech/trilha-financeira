@@ -330,11 +330,12 @@ export default function SettingsPage() {
                   </li>
                 ))}
               </ul>
-              {(profile?.plan || "free") === "pro" ? (
+              {plan === "pro" ? (
                 <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
               ) : (
-                <Button className="w-full gap-2" onClick={() => toast({ title: "Em breve!", description: "A integração de pagamento será ativada em breve." })}>
-                  <Zap className="h-4 w-4" /> Fazer Upgrade
+                <Button className="w-full gap-2" onClick={handleCheckout} disabled={checkoutLoading}>
+                  {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                  {checkoutLoading ? "Redirecionando..." : "Fazer Upgrade"}
                 </Button>
               )}
             </div>
