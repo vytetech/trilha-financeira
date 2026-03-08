@@ -355,7 +355,7 @@ export default function HabitsPage() {
           <DialogTrigger asChild><Button className="gap-2"><Plus className="h-4 w-4" /> Novo Hábito</Button></DialogTrigger>
           <DialogContent className="bg-card border-border">
             <DialogHeader><DialogTitle>Criar Hábito</DialogTitle></DialogHeader>
-            <HabitFormFields values={{ name, description, attribute, frequency, xp_reward: Number(xp) }} onChange={(v) => { setName(v.name); setDescription(v.description || ""); setAttribute(v.attribute); setFrequency(v.frequency); setXp(String(v.xp_reward)); }} />
+            <HabitFormFields values={{ name, description, attribute, frequency, xp_reward: Number(xp), custom_days: customDays }} onChange={(v) => { setName(v.name); setDescription(v.description || ""); setAttribute(v.attribute); setFrequency(v.frequency); setXp(String(v.xp_reward)); setCustomDays(v.custom_days || ["seg", "ter", "qua", "qui", "sex"]); }} />
             <Button onClick={createHabit} className="w-full mt-2">Criar Hábito</Button>
           </DialogContent>
         </Dialog>
