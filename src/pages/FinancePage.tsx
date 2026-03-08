@@ -171,13 +171,13 @@ export default function FinancePage() {
   const dailySpending = useMemo(() => {
     const map: Record<number, { income: number; expense: number }> = {};
     for (let d = 1; d <= daysInMonth; d++) map[d] = { income: 0, expense: 0 };
-    transactions.forEach(tx => {
+    regularTransactions.forEach(tx => {
       const day = new Date(tx.transaction_date).getDate();
       if (tx.type === "expense") map[day].expense += Number(tx.amount);
       else map[day].income += Number(tx.amount);
     });
     return Object.entries(map).map(([day, v]) => ({ day: `${day}`, ...v }));
-  }, [transactions, daysInMonth]);
+  }, [regularTransactions, daysInMonth]);
 
   const monthlyEvolution = useMemo(() => {
     const months: { month: string; income: number; expense: number; balance: number }[] = [];
