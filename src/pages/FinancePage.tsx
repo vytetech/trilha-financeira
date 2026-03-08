@@ -627,7 +627,7 @@ export default function FinancePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {creditCards.map((card, idx) => {
-              const invoiceTotal = getCardInvoice(card.id);
+              const invoiceTotal = getCardInvoiceTotal(card);
               const usedPct = Number(card.credit_limit) > 0 ? Math.round((invoiceTotal / Number(card.credit_limit)) * 100) : 0;
               const gradientClass = CARD_COLORS[idx % CARD_COLORS.length];
 
