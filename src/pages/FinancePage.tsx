@@ -207,12 +207,12 @@ export default function FinancePage() {
     Object.entries(
       incomeTxs.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + Number(t.amount); return acc; }, {} as Record<string, number>)
     ).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
-    [transactions]
+    [regularTransactions]
   );
 
   const topExpenses = useMemo(() =>
     [...expenseTxs].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 5),
-    [transactions]
+    [regularTransactions]
   );
 
   const savingsGauge = [{ name: "Economia", value: Math.max(savingsRate, 0), fill: savingsRate >= 30 ? "hsl(153 100% 50%)" : savingsRate >= 15 ? "hsl(40 90% 55%)" : "hsl(0 72% 51%)" }];
