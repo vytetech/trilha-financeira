@@ -330,6 +330,7 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-6 max-w-7xl">
+      <PlanLimitBanner resource="tasks" currentCount={tasks.length} resourceLabel="tarefas" />
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between flex-wrap gap-3">

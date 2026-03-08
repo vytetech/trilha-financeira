@@ -124,6 +124,7 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <PlanLimitBanner resource="goals" currentCount={goals.length} resourceLabel="metas" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Target className="h-6 w-6 text-primary" /> Metas</h1>

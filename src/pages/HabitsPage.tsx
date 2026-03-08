@@ -356,6 +356,7 @@ export default function HabitsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <PlanLimitBanner resource="habits" currentCount={habits.length} resourceLabel="hábitos" />
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
