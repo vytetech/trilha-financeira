@@ -50,6 +50,10 @@ export default function DreamsPage() {
 
   const createDream = async () => {
     if (!user || !form.title.trim()) return;
+    if (!canCreate("dreams", dreams.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais sonhos." });
+      return;
+    }
     await supabase.from("dreams").insert({
       user_id: user.id, title: form.title, description: form.description || null,
       target_amount: form.target_amount ? Number(form.target_amount) : null, target_date: form.target_date || null, priority: form.priority,

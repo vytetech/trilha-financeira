@@ -107,6 +107,10 @@ export default function TasksPage() {
 
   const createTask = async () => {
     if (!user || !newTaskTitle.trim()) return;
+    if (!canCreate("tasks", tasks.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais tarefas." });
+      return;
+    }
     await supabase.from("tasks").insert({
       user_id: user.id, title: newTaskTitle, priority: newTaskPriority,
       xp_reward: Number(newTaskXP) || 10,

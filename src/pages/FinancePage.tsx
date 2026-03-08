@@ -308,6 +308,10 @@ export default function FinancePage() {
 
   const createTransaction = async () => {
     if (!user || !form.amount) return;
+    if (!canCreate("transactions", transactions.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para adicionar mais transações." });
+      return;
+    }
     const totalInstallments = Math.max(1, Number(form.installments) || 1);
     const installmentAmount = Number(form.amount) / totalInstallments;
     const baseDate = new Date(form.date);

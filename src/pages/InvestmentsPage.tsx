@@ -107,6 +107,10 @@ export default function InvestmentsPage() {
 
   const createInvestment = async () => {
     if (!user || !form.name) return;
+    if (!canCreate("investments", investments.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para adicionar mais investimentos." });
+      return;
+    }
     await supabase.from("investments").insert({
       user_id: user.id, name: form.name, asset_type: form.asset_type,
       quantity: Number(form.quantity) || 0, average_price: Number(form.average_price) || 0, current_price: Number(form.current_price) || 0,

@@ -106,6 +106,10 @@ export default function HabitsPage() {
 
   const createHabit = async () => {
     if (!user || !name.trim()) return;
+    if (!canCreate("habits", habits.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais hábitos." });
+      return;
+    }
     const days = (frequency === "custom" || frequency === "weekdays") ? customDays : null;
     await supabase.from("habits").insert({ user_id: user.id, name, description: description || null, attribute, frequency, xp_reward: Number(xp) || 5, custom_days: days } as any);
     setName(""); setDescription(""); setAttribute("productivity"); setFrequency("daily"); setXp("5"); setCustomDays(["seg", "ter", "qua", "qui", "sex"]);

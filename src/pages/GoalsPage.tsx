@@ -76,6 +76,10 @@ export default function GoalsPage() {
 
   const saveGoal = async () => {
     if (!user || !form.name.trim()) return;
+    if (!editingGoal && !canCreate("goals", goals.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais metas." });
+      return;
+    }
     const payload = {
       name: form.name, description: form.description || null, category: form.category, goal_type: form.goal_type,
       target_value: Number(form.target_value) || 0, deadline: form.deadline || null, priority: form.priority, xp_reward: Number(form.xp_reward) || 50,
