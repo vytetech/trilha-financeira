@@ -755,7 +755,33 @@ export default function FinancePage() {
                       Fecha dia {card.closing_day} · Vence dia {card.due_day} ({dueDate.toLocaleDateString("pt-BR")})
                     </p>
                   </div>
-                  <span className="font-bold font-mono text-destructive text-lg">{fmt(invoiceTotal)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold font-mono text-destructive text-lg">{fmt(invoiceTotal)}</span>
+                    {invoiceTotal > 0 && (
+                      <Button
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={async () => {
+                          if (!user) return;
+                          await supabase.from("transactions").insert({
+                            user_id: user.id,
+                            type: "expense",
+                            amount: invoiceTotal,
+                            category: "Pagamento de Fatura",
+                            description: `Fatura ${card.name} — ${MONTH_NAMES[viewMonth - 1]}/${viewYear}`,
+                            transaction_date: dueDate.toISOString().split("T")[0],
+                            payment_method: "débito",
+                            payment_status: "paid",
+                            due_date: dueDate.toISOString().split("T")[0],
+                          });
+                          fetchData();
+                          toast({ title: `Fatura do ${card.name} paga! ✅` });
+                        }}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Pagar Fatura
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {cardTxs.length === 0 ? (
