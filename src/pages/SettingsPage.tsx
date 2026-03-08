@@ -35,6 +35,52 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  // Check for success redirect
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast({ title: "Assinatura ativada! 🎉", description: "Bem-vindo ao plano Completo!" });
+      checkSubscription();
+    }
+  }, [searchParams]);
+
+  const handleCheckout = async () => {
+    if (!session?.access_token) return;
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message || "Erro ao iniciar checkout" });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!session?.access_token) return;
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message || "Erro ao abrir portal" });
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
