@@ -59,7 +59,7 @@ function StatCard({ icon, label, value, sub, subColor = "text-muted-foreground",
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<any[]>([]);
+  const { toast } = useToast();
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [habits, setHabits] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
