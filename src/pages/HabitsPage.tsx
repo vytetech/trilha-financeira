@@ -203,7 +203,12 @@ export default function HabitsPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>Frequência</Label>
-          <Select value={values.frequency} onValueChange={(v) => onChange({ ...values, frequency: v })}>
+          <Select value={values.frequency} onValueChange={(v) => {
+            const updated = { ...values, frequency: v };
+            if (v === "weekdays") updated.custom_days = ["seg", "ter", "qua", "qui", "sex"];
+            if (v === "daily") updated.custom_days = null;
+            onChange(updated);
+          }}>
             <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
             <SelectContent>{Object.entries(freqLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
           </Select>
@@ -213,6 +218,42 @@ export default function HabitsPage() {
           <Input type="number" value={values.xp_reward} onChange={(e) => onChange({ ...values, xp_reward: Number(e.target.value) })} className="bg-secondary border-border" />
         </div>
       </div>
+
+      {/* Weekday selector - shown for custom and weekdays */}
+      {(values.frequency === "custom" || values.frequency === "weekdays") && (
+        <div className="space-y-2">
+          <Label>Dias da semana</Label>
+          <div className="flex gap-1.5">
+            {weekDayOptions.map((day) => {
+              const selected = (values.custom_days || []).includes(day.key);
+              return (
+                <button
+                  key={day.key}
+                  type="button"
+                  title={day.full}
+                  onClick={() => {
+                    const current: string[] = values.custom_days || [];
+                    const updated = selected ? current.filter((d: string) => d !== day.key) : [...current, day.key];
+                    onChange({ ...values, custom_days: updated });
+                  }}
+                  className={`h-9 w-9 rounded-full text-xs font-bold transition-all ${
+                    selected
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 scale-105"
+                      : "bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border"
+                  }`}
+                >
+                  {day.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {(values.custom_days || []).length === 0
+              ? "Selecione pelo menos um dia"
+              : `${(values.custom_days || []).length} dia(s) selecionado(s)`}
+          </p>
+        </div>
+      )}
     </div>
   );
 
