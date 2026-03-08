@@ -69,6 +69,7 @@ export default function HabitsPage() {
   const [attribute, setAttribute] = useState("productivity");
   const [frequency, setFrequency] = useState("daily");
   const [xp, setXp] = useState("5");
+  const [customDays, setCustomDays] = useState<string[]>(["seg", "ter", "qua", "qui", "sex"]);
   const [xpPopup, setXpPopup] = useState<{ amount: number; id: string } | null>(null);
   const [weekLogs, setWeekLogs] = useState<Record<string, string[]>>({});
 
