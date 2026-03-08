@@ -833,6 +833,11 @@ export default function FinancePage() {
                             {tx.installment_number}/{tx.installment_count}x
                           </Badge>
                         )}
+                        {tx.is_recurring && (
+                          <Badge variant="outline" className="text-[10px] gap-1 border-blue-400/30 text-blue-400">
+                            <Layers className="h-2.5 w-2.5" /> Fixo
+                          </Badge>
+                        )}
                         {tx.due_date && (
                           <span className={`text-[10px] flex items-center gap-1 ${isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
                             <CalendarDays className="h-3 w-3" />
