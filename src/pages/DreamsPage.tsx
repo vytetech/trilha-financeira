@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PlanLimitBanner from "@/components/PlanLimitBanner";
 
 interface Dream {
   id: string;
@@ -28,6 +30,7 @@ const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
 
 export default function DreamsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,6 +50,10 @@ export default function DreamsPage() {
 
   const createDream = async () => {
     if (!user || !form.title.trim()) return;
+    if (!canCreate("dreams", dreams.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais sonhos." });
+      return;
+    }
     await supabase.from("dreams").insert({
       user_id: user.id, title: form.title, description: form.description || null,
       target_amount: form.target_amount ? Number(form.target_amount) : null, target_date: form.target_date || null, priority: form.priority,
@@ -161,6 +168,7 @@ export default function DreamsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <PlanLimitBanner resource="dreams" currentCount={dreams.length} resourceLabel="sonhos" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Sparkles className="h-6 w-6 text-primary" /> Sonhos</h1>

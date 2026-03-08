@@ -14,8 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PlanLimitBanner from "@/components/PlanLimitBanner";
 
 interface Habit {
   id: string;
@@ -58,6 +60,7 @@ const freqLabels: Record<string, string> = {
 
 export default function HabitsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completedToday, setCompletedToday] = useState<Set<string>>(new Set());
@@ -103,6 +106,10 @@ export default function HabitsPage() {
 
   const createHabit = async () => {
     if (!user || !name.trim()) return;
+    if (!canCreate("habits", habits.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais hábitos." });
+      return;
+    }
     const days = (frequency === "custom" || frequency === "weekdays") ? customDays : null;
     await supabase.from("habits").insert({ user_id: user.id, name, description: description || null, attribute, frequency, xp_reward: Number(xp) || 5, custom_days: days } as any);
     setName(""); setDescription(""); setAttribute("productivity"); setFrequency("daily"); setXp("5"); setCustomDays(["seg", "ter", "qua", "qui", "sex"]);
@@ -349,6 +356,7 @@ export default function HabitsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <PlanLimitBanner resource="habits" currentCount={habits.length} resourceLabel="hábitos" />
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>

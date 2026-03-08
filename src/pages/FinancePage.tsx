@@ -15,8 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PlanLimitBanner from "@/components/PlanLimitBanner";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart as RPieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
@@ -88,6 +90,7 @@ const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
 
 export default function FinancePage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
@@ -305,6 +308,10 @@ export default function FinancePage() {
 
   const createTransaction = async () => {
     if (!user || !form.amount) return;
+    if (!canCreate("transactions", transactions.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para adicionar mais transações." });
+      return;
+    }
     const totalInstallments = Math.max(1, Number(form.installments) || 1);
     const installmentAmount = Number(form.amount) / totalInstallments;
     const baseDate = new Date(form.date);
@@ -384,6 +391,7 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+      <PlanLimitBanner resource="transactions" currentCount={transactions.length} resourceLabel="transações" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Wallet className="h-6 w-6 text-primary" /> Financeiro</h1>

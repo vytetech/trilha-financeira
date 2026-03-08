@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayout";
 import Login from "@/pages/Login";
@@ -32,28 +33,30 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+          <SubscriptionProvider>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
-            <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/habits" element={<HabitsPage />} />
-              <Route path="/goals" element={<GoalsPage />} />
-              <Route path="/finances" element={<FinancePage />} />
-              <Route path="/investments" element={<InvestmentsPage />} />
-              <Route path="/dreams" element={<DreamsPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/ranking" element={<RankingPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Route>
+              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/tasks" element={<TasksPage />} />
+                <Route path="/habits" element={<HabitsPage />} />
+                <Route path="/goals" element={<GoalsPage />} />
+                <Route path="/finances" element={<FinancePage />} />
+                <Route path="/investments" element={<InvestmentsPage />} />
+                <Route path="/dreams" element={<DreamsPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/ranking" element={<RankingPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SubscriptionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

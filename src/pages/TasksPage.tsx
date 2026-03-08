@@ -17,8 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PlanLimitBanner from "@/components/PlanLimitBanner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, subWeeks, addMonths, subMonths, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -57,6 +59,7 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode }> = {
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -104,6 +107,10 @@ export default function TasksPage() {
 
   const createTask = async () => {
     if (!user || !newTaskTitle.trim()) return;
+    if (!canCreate("tasks", tasks.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais tarefas." });
+      return;
+    }
     await supabase.from("tasks").insert({
       user_id: user.id, title: newTaskTitle, priority: newTaskPriority,
       xp_reward: Number(newTaskXP) || 10,
@@ -323,6 +330,7 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-6 max-w-7xl">
+      <PlanLimitBanner resource="tasks" currentCount={tasks.length} resourceLabel="tarefas" />
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between flex-wrap gap-3">

@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PlanLimitBanner from "@/components/PlanLimitBanner";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend, Area, AreaChart, RadialBarChart, RadialBar } from "recharts";
 import InvestmentDetailSheet from "@/components/investments/InvestmentDetailSheet";
 
@@ -51,6 +53,7 @@ type PeriodFilter = "month" | "year" | "all";
 
 export default function InvestmentsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [investTxs, setInvestTxs] = useState<InvestmentTransaction[]>([]);
@@ -104,6 +107,10 @@ export default function InvestmentsPage() {
 
   const createInvestment = async () => {
     if (!user || !form.name) return;
+    if (!canCreate("investments", investments.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para adicionar mais investimentos." });
+      return;
+    }
     await supabase.from("investments").insert({
       user_id: user.id, name: form.name, asset_type: form.asset_type,
       quantity: Number(form.quantity) || 0, average_price: Number(form.average_price) || 0, current_price: Number(form.current_price) || 0,
@@ -257,6 +264,7 @@ export default function InvestmentsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+      <PlanLimitBanner resource="investments" currentCount={investments.length} resourceLabel="investimentos" />
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between flex-wrap gap-2">
         <div>

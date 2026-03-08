@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +15,18 @@ import { motion } from "framer-motion";
 import {
   Settings, User, Save, Shield, Bell, Palette, CreditCard, Key,
   Mail, Globe, Target, DollarSign, Calendar, AlertTriangle, Trash2,
-  Lock, Eye, EyeOff, CheckCircle2, Zap, Crown
+  Lock, Eye, EyeOff, CheckCircle2, Zap, Crown, Loader2, ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
+  const { plan, subscribed, subscriptionEnd, loading: subLoading, checkSubscription } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "perfil";
 
   const [fullName, setFullName] = useState("");
   const [currency, setCurrency] = useState("BRL");
@@ -31,6 +35,52 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  // Check for success redirect
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast({ title: "Assinatura ativada! 🎉", description: "Bem-vindo ao plano Completo!" });
+      checkSubscription();
+    }
+  }, [searchParams]);
+
+  const handleCheckout = async () => {
+    if (!session?.access_token) return;
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message || "Erro ao iniciar checkout" });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!session?.access_token) return;
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message || "Erro ao abrir portal" });
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
@@ -118,7 +168,7 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">Gerencie seu perfil, preferências e segurança</p>
       </div>
 
-      <Tabs defaultValue="perfil">
+      <Tabs defaultValue={defaultTab}>
         <TabsList className="bg-secondary border border-border">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
           <TabsTrigger value="plano">Plano</TabsTrigger>
@@ -182,40 +232,52 @@ export default function SettingsPage() {
           {/* Current plan */}
           <SectionCard>
             <SectionHeader icon={<Crown className="h-4 w-4 text-primary" />} title="Seu Plano Atual" desc="Gerencie sua assinatura" />
-            <div className={`rounded-lg border p-4 flex items-center justify-between ${(profile?.plan || "free") === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-secondary/50"}`}>
+            <div className={`rounded-lg border p-4 flex items-center justify-between ${plan === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-secondary/50"}`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${(profile?.plan || "free") === "pro" ? "bg-primary/20" : "bg-muted"}`}>
-                  {(profile?.plan || "free") === "pro" ? <Crown className="h-5 w-5 text-primary" /> : <User className="h-5 w-5 text-muted-foreground" />}
+                <div className={`p-2 rounded-lg ${plan === "pro" ? "bg-primary/20" : "bg-muted"}`}>
+                  {plan === "pro" ? <Crown className="h-5 w-5 text-primary" /> : <User className="h-5 w-5 text-muted-foreground" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground">{(profile?.plan || "free") === "pro" ? "Plano Completo" : "Plano Free"}</p>
-                  <p className="text-xs text-muted-foreground">{(profile?.plan || "free") === "pro" ? "Acesso ilimitado a todos os recursos" : "Acesso limitado aos recursos básicos"}</p>
+                  <p className="font-semibold text-foreground">{plan === "pro" ? "Plano Completo" : "Plano Free"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {plan === "pro"
+                      ? `Acesso ilimitado • ${subscriptionEnd ? `Renova em ${new Date(subscriptionEnd).toLocaleDateString("pt-BR")}` : "Ativo"}`
+                      : "Acesso limitado aos recursos básicos"}
+                  </p>
                 </div>
               </div>
-              <Badge className={`${(profile?.plan || "free") === "pro" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"} border-none`}>
-                {(profile?.plan || "free") === "pro" ? "Ativo" : "Gratuito"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className={`${plan === "pro" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"} border-none`}>
+                  {plan === "pro" ? "Ativo" : "Gratuito"}
+                </Badge>
+                {plan === "pro" && (
+                  <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={portalLoading} className="gap-1.5">
+                    {portalLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
+                    Gerenciar
+                  </Button>
+                )}
+              </div>
             </div>
           </SectionCard>
 
           {/* Plan comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Free */}
-            <div className={`rounded-xl border p-6 space-y-5 ${(profile?.plan || "free") === "free" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+            <div className={`rounded-xl border p-6 space-y-5 ${plan === "free" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
               <div>
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground">Free</h3>
-                  {(profile?.plan || "free") === "free" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
+                  {plan === "free" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
                 </div>
                 <p className="text-3xl font-bold text-foreground mt-2">R$ 0<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
                 <p className="text-xs text-muted-foreground mt-1">Para começar a organizar sua vida</p>
               </div>
               <Separator />
               <ul className="space-y-2.5">
-                {[
-                  { text: "Até 50 transações/mês", included: true },
-                  { text: "3 metas ativas", included: true },
-                  { text: "Hábitos ilimitados", included: true },
+                 {[
+                  { text: "5 tarefas ativas", included: true },
+                  { text: "3 hábitos", included: true },
+                  { text: "2 metas ativas", included: true },
                   { text: "3 sonhos ativos", included: true },
                   { text: "Relatórios básicos", included: true },
                   { text: "Investimentos limitados (5)", included: true },
@@ -230,20 +292,20 @@ export default function SettingsPage() {
                   </li>
                 ))}
               </ul>
-              {(profile?.plan || "free") === "free" && (
+              {plan === "free" && (
                 <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
               )}
             </div>
 
             {/* Pro / Completo */}
-            <div className={`rounded-xl border p-6 space-y-5 relative overflow-hidden ${(profile?.plan || "free") === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+            <div className={`rounded-xl border p-6 space-y-5 relative overflow-hidden ${plan === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
                 RECOMENDADO
               </div>
               <div>
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground flex items-center gap-2"><Crown className="h-5 w-5 text-primary" /> Completo</h3>
-                  {(profile?.plan || "free") === "pro" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
+                  {plan === "pro" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
                 </div>
                 <p className="text-3xl font-bold text-foreground mt-2">R$ 19,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
                 <p className="text-xs text-muted-foreground mt-1">Desbloqueie todo o potencial do TRILHA</p>
@@ -268,11 +330,12 @@ export default function SettingsPage() {
                   </li>
                 ))}
               </ul>
-              {(profile?.plan || "free") === "pro" ? (
+              {plan === "pro" ? (
                 <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
               ) : (
-                <Button className="w-full gap-2" onClick={() => toast({ title: "Em breve!", description: "A integração de pagamento será ativada em breve." })}>
-                  <Zap className="h-4 w-4" /> Fazer Upgrade
+                <Button className="w-full gap-2" onClick={handleCheckout} disabled={checkoutLoading}>
+                  {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                  {checkoutLoading ? "Redirecionando..." : "Fazer Upgrade"}
                 </Button>
               )}
             </div>
@@ -285,7 +348,7 @@ export default function SettingsPage() {
               {[
                 { q: "Posso cancelar a qualquer momento?", a: "Sim, você pode cancelar sua assinatura quando quiser. Seu acesso continua até o final do período pago." },
                 { q: "Meus dados são mantidos se eu fizer downgrade?", a: "Sim, seus dados são preservados. Apenas o acesso a recursos premium será limitado." },
-                { q: "Quais formas de pagamento são aceitas?", a: "Em breve: Cartão de crédito, PIX e boleto via Stripe/Mercado Pago." },
+                { q: "Quais formas de pagamento são aceitas?", a: "Cartão de crédito internacional via Stripe. Pagamento seguro e criptografado." },
               ].map((faq, i) => (
                 <div key={i} className="py-2.5 border-b border-border last:border-0">
                   <p className="text-sm font-medium text-foreground">{faq.q}</p>

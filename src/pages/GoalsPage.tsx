@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PlanLimitBanner from "@/components/PlanLimitBanner";
 
 interface Goal {
   id: string;
@@ -35,6 +37,7 @@ const emptyForm = { name: "", description: "", category: "personal", goal_type: 
 
 export default function GoalsPage() {
   const { user } = useAuth();
+  const { canCreate } = useSubscription();
   const { toast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -73,6 +76,10 @@ export default function GoalsPage() {
 
   const saveGoal = async () => {
     if (!user || !form.name.trim()) return;
+    if (!editingGoal && !canCreate("goals", goals.length)) {
+      toast({ variant: "destructive", title: "Limite do plano Free", description: "Faça upgrade para criar mais metas." });
+      return;
+    }
     const payload = {
       name: form.name, description: form.description || null, category: form.category, goal_type: form.goal_type,
       target_value: Number(form.target_value) || 0, deadline: form.deadline || null, priority: form.priority, xp_reward: Number(form.xp_reward) || 50,
@@ -117,6 +124,7 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <PlanLimitBanner resource="goals" currentCount={goals.length} resourceLabel="metas" />
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Target className="h-6 w-6 text-primary" /> Metas</h1>
