@@ -33,6 +33,8 @@ interface Transaction {
   payment_status: string;
   due_date: string | null;
   credit_card_id: string | null;
+  installment_count: number;
+  installment_number: number;
 }
 
 interface Budget {
@@ -93,7 +95,7 @@ export default function FinancePage() {
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [cardDialogOpen, setCardDialogOpen] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [form, setForm] = useState({ type: "expense", amount: "", category: "Outros", description: "", date: new Date().toISOString().split("T")[0], payment_method: "", payment_status: "paid", due_date: "", credit_card_id: "" });
+  const [form, setForm] = useState({ type: "expense", amount: "", category: "Outros", description: "", date: new Date().toISOString().split("T")[0], payment_method: "", payment_status: "paid", due_date: "", credit_card_id: "", installments: "1" });
   const [budgetForm, setBudgetForm] = useState({ category: "Alimentação", limit: "" });
   const [cardForm, setCardForm] = useState({ name: "", last_four: "", brand: "Visa", credit_limit: "", closing_day: "1", due_day: "10" });
 
@@ -237,16 +239,28 @@ export default function FinancePage() {
 
   const createTransaction = async () => {
     if (!user || !form.amount) return;
-    await supabase.from("transactions").insert({
-      user_id: user.id, type: form.type, amount: Number(form.amount), category: form.category,
-      description: form.description || null, transaction_date: form.date, payment_method: form.payment_method || null,
-      payment_status: form.payment_status, due_date: form.due_date || null,
-      credit_card_id: form.credit_card_id || null,
+    const totalInstallments = Math.max(1, Number(form.installments) || 1);
+    const installmentAmount = Number(form.amount) / totalInstallments;
+    const baseDate = new Date(form.date);
+
+    const rows = Array.from({ length: totalInstallments }, (_, i) => {
+      const txDate = new Date(baseDate);
+      txDate.setMonth(txDate.getMonth() + i);
+      return {
+        user_id: user.id, type: form.type, amount: Math.round(installmentAmount * 100) / 100, category: form.category,
+        description: totalInstallments > 1 ? `${form.description || form.category} (${i + 1}/${totalInstallments})` : (form.description || null),
+        transaction_date: txDate.toISOString().split("T")[0], payment_method: form.payment_method || null,
+        payment_status: i === 0 ? form.payment_status : "unpaid", due_date: form.due_date || null,
+        credit_card_id: form.credit_card_id || null,
+        installment_count: totalInstallments, installment_number: i + 1,
+      };
     });
-    setForm({ type: "expense", amount: "", category: "Outros", description: "", date: new Date().toISOString().split("T")[0], payment_method: "", payment_status: "paid", due_date: "", credit_card_id: "" });
+
+    await supabase.from("transactions").insert(rows);
+    setForm({ type: "expense", amount: "", category: "Outros", description: "", date: new Date().toISOString().split("T")[0], payment_method: "", payment_status: "paid", due_date: "", credit_card_id: "", installments: "1" });
     setDialogOpen(false);
     fetchData();
-    toast({ title: "Transação registrada! 💰" });
+    toast({ title: totalInstallments > 1 ? `Compra parcelada em ${totalInstallments}x registrada! 💳` : "Transação registrada! 💰" });
   };
 
   const createBudget = async () => {
@@ -334,6 +348,23 @@ export default function FinancePage() {
                       {creditCards.map(c => (
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2"><CreditCard className="h-3 w-3" />{c.name} {c.last_four ? `•••• ${c.last_four}` : ""}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Installments selector - only for credit card expenses */}
+              {form.credit_card_id && form.credit_card_id !== "" && (
+                <div className="space-y-2">
+                  <Label>Parcelas</Label>
+                  <Select value={form.installments} onValueChange={(v) => setForm({ ...form, installments: v })}>
+                    <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}x {form.amount ? `de ${fmt(Number(form.amount) / n)}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -547,6 +578,11 @@ export default function FinancePage() {
                         {linkedCard && (
                           <Badge variant="outline" className="text-[10px] gap-1">
                             <CreditCard className="h-2.5 w-2.5" />{linkedCard.name}
+                          </Badge>
+                        )}
+                        {tx.installment_count > 1 && (
+                          <Badge variant="outline" className="text-[10px] gap-1 border-accent/30 text-accent">
+                            {tx.installment_number}/{tx.installment_count}x
                           </Badge>
                         )}
                         {tx.due_date && (
