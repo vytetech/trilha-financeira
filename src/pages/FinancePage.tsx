@@ -36,6 +36,7 @@ interface Transaction {
   credit_card_id: string | null;
   installment_count: number;
   installment_number: number;
+  is_recurring: boolean;
 }
 
 interface Budget {
