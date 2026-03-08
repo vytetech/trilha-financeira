@@ -121,6 +121,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="perfil">
         <TabsList className="bg-secondary border border-border">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="plano">Plano</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
           <TabsTrigger value="seguranca">Segurança</TabsTrigger>
           <TabsTrigger value="conta">Conta</TabsTrigger>
