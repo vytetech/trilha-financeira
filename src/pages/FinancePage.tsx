@@ -57,7 +57,7 @@ interface CreditCardType {
   is_active: boolean;
 }
 
-const categories = ["Alimentação", "Transporte", "Moradia", "Lazer", "Saúde", "Educação", "Assinaturas", "Cartão de Crédito", "Salário", "Freelance", "Investimentos", "Outros"];
+const categories = ["Alimentação", "Transporte", "Moradia", "Lazer", "Saúde", "Educação", "Assinaturas", "Pagamento de Fatura", "Salário", "Freelance", "Investimentos", "Outros"];
 const COLORS = [
   "hsl(153 100% 50%)", "hsl(200 80% 50%)", "hsl(280 70% 55%)", "hsl(40 90% 55%)",
   "hsl(0 72% 51%)", "hsl(180 60% 45%)", "hsl(320 70% 50%)", "hsl(120 50% 40%)",
