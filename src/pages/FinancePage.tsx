@@ -346,7 +346,7 @@ export default function FinancePage() {
     toast({ title: "Orçamento removido" });
   };
 
-
+  const createCreditCard = async () => {
     if (!user || !cardForm.name) return;
     await supabase.from("credit_cards").insert({
       user_id: user.id,
