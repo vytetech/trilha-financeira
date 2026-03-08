@@ -355,6 +355,22 @@ export default function FinancePage() {
                 </div>
               )}
 
+              {/* Installments selector - only for credit card expenses */}
+              {form.credit_card_id && form.credit_card_id !== "" && (
+                <div className="space-y-2">
+                  <Label>Parcelas</Label>
+                  <Select value={form.installments} onValueChange={(v) => setForm({ ...form, installments: v })}>
+                    <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}x {form.amount ? `de ${fmt(Number(form.amount) / n)}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2"><Label>Status Pagamento</Label>
                   <Select value={form.payment_status} onValueChange={(v) => setForm({ ...form, payment_status: v })}>
