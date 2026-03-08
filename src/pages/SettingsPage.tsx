@@ -292,7 +292,7 @@ export default function SettingsPage() {
                   </li>
                 ))}
               </ul>
-              {(profile?.plan || "free") === "free" && (
+              {plan === "free" && (
                 <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
               )}
             </div>
