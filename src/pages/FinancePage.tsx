@@ -580,6 +580,11 @@ export default function FinancePage() {
                             <CreditCard className="h-2.5 w-2.5" />{linkedCard.name}
                           </Badge>
                         )}
+                        {tx.installment_count > 1 && (
+                          <Badge variant="outline" className="text-[10px] gap-1 border-accent/30 text-accent">
+                            {tx.installment_number}/{tx.installment_count}x
+                          </Badge>
+                        )}
                         {tx.due_date && (
                           <span className={`text-[10px] flex items-center gap-1 ${isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
                             <CalendarDays className="h-3 w-3" />
