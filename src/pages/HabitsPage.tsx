@@ -28,7 +28,18 @@ interface Habit {
   best_streak: number;
   is_active: boolean;
   created_at: string;
+  custom_days: string[] | null;
 }
+
+const weekDayOptions = [
+  { key: "dom", label: "D", full: "Domingo" },
+  { key: "seg", label: "S", full: "Segunda" },
+  { key: "ter", label: "T", full: "Terça" },
+  { key: "qua", label: "Q", full: "Quarta" },
+  { key: "qui", label: "Q", full: "Quinta" },
+  { key: "sex", label: "S", full: "Sexta" },
+  { key: "sab", label: "S", full: "Sábado" },
+];
 
 const attrConfig: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
   focus: { label: "Foco", emoji: "🎯", color: "text-blue-400", bg: "bg-blue-400/10" },
