@@ -319,6 +319,7 @@ export default function FinancePage() {
         payment_status: i === 0 ? form.payment_status : "unpaid", due_date: form.due_date || null,
         credit_card_id: form.credit_card_id || null,
         installment_count: totalInstallments, installment_number: i + 1,
+        is_recurring: form.is_recurring,
       };
     });
 
