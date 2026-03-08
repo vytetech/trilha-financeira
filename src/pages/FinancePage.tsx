@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import {
   Wallet, Plus, ArrowUpCircle, ArrowDownCircle, Trash2, PieChart, ChevronLeft, ChevronRight,
   TrendingUp, TrendingDown, Target, CreditCard, DollarSign, Flame, CalendarDays, BarChart3, Activity,
-  Clock, CheckCircle2, AlertCircle, Edit2, Eye, EyeOff
+  Clock, CheckCircle2, AlertCircle, Edit2, Eye, EyeOff, Receipt, ShieldCheck, Percent, ArrowRightLeft,
+  Banknote, CircleDollarSign, Scale, Zap, FileWarning, Landmark, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
