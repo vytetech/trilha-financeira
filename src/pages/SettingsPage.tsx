@@ -274,10 +274,10 @@ export default function SettingsPage() {
               </div>
               <Separator />
               <ul className="space-y-2.5">
-                {[
-                  { text: "Até 50 transações/mês", included: true },
-                  { text: "3 metas ativas", included: true },
-                  { text: "Hábitos ilimitados", included: true },
+                 {[
+                  { text: "5 tarefas ativas", included: true },
+                  { text: "3 hábitos", included: true },
+                  { text: "2 metas ativas", included: true },
                   { text: "3 sonhos ativos", included: true },
                   { text: "Relatórios básicos", included: true },
                   { text: "Investimentos limitados (5)", included: true },
