@@ -348,7 +348,7 @@ export default function SettingsPage() {
               {[
                 { q: "Posso cancelar a qualquer momento?", a: "Sim, você pode cancelar sua assinatura quando quiser. Seu acesso continua até o final do período pago." },
                 { q: "Meus dados são mantidos se eu fizer downgrade?", a: "Sim, seus dados são preservados. Apenas o acesso a recursos premium será limitado." },
-                { q: "Quais formas de pagamento são aceitas?", a: "Em breve: Cartão de crédito, PIX e boleto via Stripe/Mercado Pago." },
+                { q: "Quais formas de pagamento são aceitas?", a: "Cartão de crédito internacional via Stripe. Pagamento seguro e criptografado." },
               ].map((faq, i) => (
                 <div key={i} className="py-2.5 border-b border-border last:border-0">
                   <p className="text-sm font-medium text-foreground">{faq.q}</p>
