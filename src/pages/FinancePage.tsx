@@ -136,14 +136,18 @@ export default function FinancePage() {
 
   useEffect(() => { fetchData(); }, [user, viewMonth, viewYear]);
 
-  const income = transactions.filter((t) => t.type === "income").reduce((a, t) => a + Number(t.amount), 0);
-  const expenses = transactions.filter((t) => t.type === "expense").reduce((a, t) => a + Number(t.amount), 0);
+  // Filter out credit card transactions from regular views — they only show in Cartões tab
+  const regularTransactions = transactions.filter(t => !t.credit_card_id);
+  const allRegularTransactions = allTransactions.filter(t => !t.credit_card_id);
+
+  const income = regularTransactions.filter((t) => t.type === "income").reduce((a, t) => a + Number(t.amount), 0);
+  const expenses = regularTransactions.filter((t) => t.type === "expense").reduce((a, t) => a + Number(t.amount), 0);
   const balance = income - expenses;
   const savingsRate = income > 0 ? Math.round((balance / income) * 100) : 0;
 
-  const txCount = transactions.length;
-  const expenseTxs = transactions.filter(t => t.type === "expense");
-  const incomeTxs = transactions.filter(t => t.type === "income");
+  const txCount = regularTransactions.length;
+  const expenseTxs = regularTransactions.filter(t => t.type === "expense");
+  const incomeTxs = regularTransactions.filter(t => t.type === "income");
 
   const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
   const daysPassed = isCurrentMonth ? now.getDate() : daysInMonth;
@@ -161,7 +165,7 @@ export default function FinancePage() {
     Object.entries(
       expenseTxs.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + Number(t.amount); return acc; }, {} as Record<string, number>)
     ).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
-    [transactions]
+    [regularTransactions]
   );
 
   const dailySpending = useMemo(() => {
