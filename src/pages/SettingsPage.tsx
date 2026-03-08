@@ -168,7 +168,7 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">Gerencie seu perfil, preferências e segurança</p>
       </div>
 
-      <Tabs defaultValue="perfil">
+      <Tabs defaultValue={defaultTab}>
         <TabsList className="bg-secondary border border-border">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
           <TabsTrigger value="plano">Plano</TabsTrigger>
