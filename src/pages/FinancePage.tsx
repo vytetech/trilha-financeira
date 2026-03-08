@@ -345,7 +345,7 @@ export default function FinancePage() {
               {creditCards.length > 0 && form.type === "expense" && (
                 <div className="space-y-2">
                   <Label>Cartão de Crédito (opcional)</Label>
-                  <Select value={form.credit_card_id} onValueChange={(v) => setForm({ ...form, credit_card_id: v === "none" ? "" : v, category: v !== "none" ? "Cartão de Crédito" : form.category })}>
+                  <Select value={form.credit_card_id} onValueChange={(v) => setForm({ ...form, credit_card_id: v === "none" ? "" : v })}>
                     <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Nenhum" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Nenhum</SelectItem>
