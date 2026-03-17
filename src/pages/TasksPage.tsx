@@ -184,11 +184,12 @@ export default function TasksPage() {
     }
     await supabase.from("tasks").insert({
       user_id: user.id, title: newTaskTitle, priority: newTaskPriority,
+      description: newTaskDescription.trim() || null,
       xp_reward: Number(newTaskXP) || 10,
       estimated_minutes: newTaskMinutes ? Number(newTaskMinutes) : null,
       due_date: newTaskDueDate ? format(newTaskDueDate, "yyyy-MM-dd") : null,
     });
-    setNewTaskTitle(""); setNewTaskPriority("medium"); setNewTaskXP("10"); setNewTaskMinutes(""); setNewTaskDueDate(undefined);
+    setNewTaskTitle(""); setNewTaskDescription(""); setNewTaskPriority("medium"); setNewTaskXP("10"); setNewTaskMinutes(""); setNewTaskDueDate(undefined);
     setDialogOpen(false);
     fetchData();
     toast({ title: "Tarefa criada! ✅" });
