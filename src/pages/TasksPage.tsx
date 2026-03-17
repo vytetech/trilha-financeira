@@ -456,7 +456,7 @@ export default function TasksPage() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="h-5 w-5 text-primary" /> Editar Tarefa</DialogTitle></DialogHeader>
           {editingTask && (
             <TaskForm
-              values={{ title: editingTask.title, priority: editingTask.priority, xp_reward: editingTask.xp_reward, estimated_minutes: editingTask.estimated_minutes, due_date: editingTask.due_date }}
+              values={{ title: editingTask.title, description: editingTask.description || "", priority: editingTask.priority, xp_reward: editingTask.xp_reward, estimated_minutes: editingTask.estimated_minutes, due_date: editingTask.due_date }}
               onChange={(v) => setEditingTask({ ...editingTask, ...v })}
               onSubmit={updateTask} submitLabel="Salvar Alterações"
             />
