@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import {
   CheckSquare, Plus, Flame, Clock, Zap, Trash2, Star, Pencil,
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Target,
-  ArrowRight, ArrowLeft, Trophy, BarChart3, ListChecks, LayoutGrid
+  ArrowRight, ArrowLeft, Trophy, BarChart3, ListChecks, LayoutGrid,
+  Filter, X, GripVertical
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -220,12 +222,14 @@ export default function TasksPage() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [dayDetailOpen, setDayDetailOpen] = useState(false);
   const [xpPopup, setXpPopup] = useState<{ amount: number; id: string } | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterSearch, setFilterSearch] = useState("");
 
   const fetchData = async () => {
     if (!user) return;
     const today = new Date().toISOString().split("T")[0];
     const [tasksRes, habitsRes, logsRes] = await Promise.all([
-      supabase.from("tasks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("tasks").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       supabase.from("habits").select("*").eq("user_id", user.id).eq("is_active", true),
       supabase.from("habit_logs").select("habit_id").eq("user_id", user.id).eq("completed_at", today),
     ]);
@@ -332,6 +336,32 @@ export default function TasksPage() {
   const openDayDetail = (day: Date) => { setSelectedDay(day); setDayDetailOpen(true); };
   const selectedDayTasks = selectedDay ? getTasksForDay(selectedDay) : [];
 
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (filterPriority !== "all" && t.priority !== filterPriority) return false;
+      if (filterSearch && !t.title.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+      return true;
+    });
+  }, [tasks, filterPriority, filterSearch]);
+
+  const hasActiveFilters = filterPriority !== "all" || filterSearch.length > 0;
+
+  const onDragEnd = useCallback(async (result: DropResult) => {
+    const { draggableId, destination } = result;
+    if (!destination) return;
+    const newStatus = destination.droppableId;
+    const task = tasks.find(t => t.id === draggableId);
+    if (!task || task.status === newStatus) return;
+    setTasks(prev => prev.map(t => t.id === draggableId ? { ...t, status: newStatus } : t));
+    await supabase.from("tasks").update({ status: newStatus }).eq("id", draggableId);
+    if (newStatus === "done" && task) {
+      await addXpToProfile(task.xp_reward);
+      setXpPopup({ amount: task.xp_reward, id: draggableId });
+      setTimeout(() => setXpPopup(null), 1800);
+      toast({ title: `+${task.xp_reward} XP! Tarefa concluída 🎉` });
+    }
+    fetchData();
+  }, [tasks, user]);
 
 
   // Task Card Component
@@ -561,36 +591,101 @@ export default function TasksPage() {
         </AnimatePresence>
       </motion.div>
 
+      {/* Filters Bar */}
+      {view === "kanban" && (
+        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+              placeholder="Buscar tarefas..."
+              className="h-8 text-sm bg-secondary border-border"
+            />
+          </div>
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className="w-[140px] h-8 text-xs bg-secondary border-border">
+              <SelectValue placeholder="Prioridade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="urgent">Urgente</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
+              <SelectItem value="medium">Média</SelectItem>
+              <SelectItem value="low">Baixa</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground"
+              onClick={() => { setFilterPriority("all"); setFilterSearch(""); }}>
+              <X className="h-3 w-3" /> Limpar
+            </Button>
+          )}
+        </motion.div>
+      )}
+
       {/* Kanban View */}
       {view === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {columns.map((col, ci) => {
-            const colTasks = tasks.filter(t => t.status === col);
-            const cfg = statusConfig[col];
-            return (
-              <motion.div key={col} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.05 }}
-                className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary">{cfg.icon}</span>
-                    <h3 className="font-semibold text-foreground text-sm">{cfg.label}</h3>
-                  </div>
-                  <span className="text-[10px] font-mono bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">{colTasks.length}</span>
-                </div>
-                <div className="p-3 space-y-2 min-h-[120px] max-h-[480px] overflow-y-auto">
-                  <AnimatePresence>
-                    {colTasks.map((task) => <TaskCard key={task.id} task={task} />)}
-                  </AnimatePresence>
-                  {colTasks.length === 0 && (
-                    <div className="flex items-center justify-center h-20 text-muted-foreground/40">
-                      <p className="text-xs">Sem tarefas</p>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {columns.map((col, ci) => {
+              const colTasks = filteredTasks.filter(t => t.status === col);
+              const cfg = statusConfig[col];
+              return (
+                <motion.div key={col} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.05 }}
+                  className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary">{cfg.icon}</span>
+                      <h3 className="font-semibold text-foreground text-sm">{cfg.label}</h3>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                    <span className="text-[10px] font-mono bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">{colTasks.length}</span>
+                  </div>
+                  <Droppable droppableId={col}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={cn(
+                          "p-3 space-y-2 min-h-[120px] max-h-[480px] overflow-y-auto transition-colors",
+                          snapshot.isDraggingOver && "bg-primary/5"
+                        )}
+                      >
+                        {colTasks.map((task, index) => (
+                          <Draggable key={task.id} draggableId={task.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={cn(snapshot.isDragging && "opacity-80")}
+                              >
+                                <div className="flex items-start gap-1">
+                                  <div {...provided.dragHandleProps} className="pt-4 px-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground shrink-0">
+                                    <GripVertical className="h-3.5 w-3.5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <TaskCard task={task} />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                        {colTasks.length === 0 && (
+                          <div className="flex items-center justify-center h-20 text-muted-foreground/40">
+                            <p className="text-xs">Sem tarefas</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Droppable>
+                </motion.div>
+              );
+            })}
+          </div>
+        </DragDropContext>
       )}
 
       {/* Week View */}
