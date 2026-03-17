@@ -441,8 +441,8 @@ export default function TasksPage() {
             <DialogContent className="bg-card border-border">
               <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary" /> Criar Tarefa</DialogTitle></DialogHeader>
               <TaskForm
-                values={{ title: newTaskTitle, priority: newTaskPriority, xp_reward: Number(newTaskXP), estimated_minutes: newTaskMinutes ? Number(newTaskMinutes) : null, due_date: newTaskDueDate }}
-                onChange={(v) => { setNewTaskTitle(v.title); setNewTaskPriority(v.priority); setNewTaskXP(String(v.xp_reward)); setNewTaskMinutes(v.estimated_minutes ? String(v.estimated_minutes) : ""); setNewTaskDueDate(v.due_date ? (typeof v.due_date === "string" ? new Date(v.due_date + "T12:00:00") : v.due_date) : undefined); }}
+                values={{ title: newTaskTitle, description: newTaskDescription, priority: newTaskPriority, xp_reward: Number(newTaskXP), estimated_minutes: newTaskMinutes ? Number(newTaskMinutes) : null, due_date: newTaskDueDate }}
+                onChange={(v) => { setNewTaskTitle(v.title); setNewTaskDescription(v.description || ""); setNewTaskPriority(v.priority); setNewTaskXP(String(v.xp_reward)); setNewTaskMinutes(v.estimated_minutes ? String(v.estimated_minutes) : ""); setNewTaskDueDate(v.due_date ? (typeof v.due_date === "string" ? new Date(v.due_date + "T12:00:00") : v.due_date) : undefined); }}
                 onSubmit={createTask} submitLabel="Criar Tarefa"
               />
             </DialogContent>
