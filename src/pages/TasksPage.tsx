@@ -222,6 +222,8 @@ export default function TasksPage() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [dayDetailOpen, setDayDetailOpen] = useState(false);
   const [xpPopup, setXpPopup] = useState<{ amount: number; id: string } | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterSearch, setFilterSearch] = useState("");
 
   const fetchData = async () => {
     if (!user) return;
