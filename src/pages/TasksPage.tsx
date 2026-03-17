@@ -198,7 +198,7 @@ export default function TasksPage() {
   const updateTask = async () => {
     if (!editingTask) return;
     await supabase.from("tasks").update({
-      title: editingTask.title, priority: editingTask.priority,
+      title: editingTask.title, description: editingTask.description || null, priority: editingTask.priority,
       xp_reward: editingTask.xp_reward, estimated_minutes: editingTask.estimated_minutes,
       due_date: editingTask.due_date,
     }).eq("id", editingTask.id);
