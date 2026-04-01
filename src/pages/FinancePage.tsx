@@ -943,6 +943,134 @@ export default function FinancePage() {
           </div>
         </TabsContent>
 
+        {/* ========== CONTAS A PAGAR ========== */}
+        <TabsContent value="faturas" className="mt-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><Receipt className="h-5 w-5 text-primary" /> Contas do Mês</h3>
+            <Dialog open={billDialogOpen} onOpenChange={setBillDialogOpen}>
+              <DialogTrigger asChild><Button variant="outline" size="sm" className="gap-2"><Plus className="h-4 w-4" /> Nova Conta</Button></DialogTrigger>
+              <DialogContent className="bg-card border-border">
+                <DialogHeader><DialogTitle>Nova Conta a Pagar</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2"><Label>Descrição</Label><Input value={billForm.description} onChange={(e) => setBillForm({ ...billForm, description: e.target.value })} className="bg-secondary border-border" placeholder="Ex: Aluguel, Internet, Luz..." /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>Valor (R$)</Label><Input type="number" value={billForm.amount} onChange={(e) => setBillForm({ ...billForm, amount: e.target.value })} className="bg-secondary border-border" placeholder="0,00" /></div>
+                    <div className="space-y-2"><Label>Vencimento</Label><Input type="date" value={billForm.due_date} onChange={(e) => setBillForm({ ...billForm, due_date: e.target.value })} className="bg-secondary border-border" /></div>
+                  </div>
+                  <div className="space-y-2"><Label>Categoria</Label>
+                    <Select value={billForm.category} onValueChange={(v) => setBillForm({ ...billForm, category: v })}>
+                      <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                      <SelectContent>{categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-secondary/30">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{billForm.is_recurring ? "Recorrente" : "Única"}</p>
+                        <p className="text-[10px] text-muted-foreground">{billForm.is_recurring ? "Repete todo mês" : "Conta pontual"}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant={!billForm.is_recurring ? "default" : "outline"} className="text-xs h-7 px-2.5" onClick={() => setBillForm({ ...billForm, is_recurring: false, recurring_end_date: "" })}>Única</Button>
+                      <Button size="sm" variant={billForm.is_recurring ? "default" : "outline"} className="text-xs h-7 px-2.5" onClick={() => setBillForm({ ...billForm, is_recurring: true })}>Recorrente</Button>
+                    </div>
+                  </div>
+                  {billForm.is_recurring && (
+                    <div className="space-y-2">
+                      <Label>Recorrente até (opcional)</Label>
+                      <Input type="date" value={billForm.recurring_end_date} onChange={(e) => setBillForm({ ...billForm, recurring_end_date: e.target.value })} className="bg-secondary border-border" />
+                      <p className="text-[10px] text-muted-foreground">Deixe vazio se for por tempo indeterminado</p>
+                    </div>
+                  )}
+                  <Button onClick={createBill} className="w-full">Adicionar Conta</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Summary cards */}
+          {(() => {
+            const unpaidBills = bills.filter(b => !b.is_paid);
+            const paidBills = bills.filter(b => b.is_paid);
+            const totalUnpaid = unpaidBills.reduce((a, b) => a + Number(b.amount), 0);
+            const totalPaidBills = paidBills.reduce((a, b) => a + Number(b.amount), 0);
+            const overdueBills = unpaidBills.filter(b => new Date(b.due_date) < now);
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10"><Clock className="h-5 w-5 text-destructive" /></div>
+                  <div><p className="text-xs text-muted-foreground">A Pagar</p><p className="font-bold text-foreground font-mono">{fmt(totalUnpaid)}</p><p className="text-[10px] text-muted-foreground">{unpaidBills.length} conta(s)</p></div>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10"><CheckCircle2 className="h-5 w-5 text-primary" /></div>
+                  <div><p className="text-xs text-muted-foreground">Pagas</p><p className="font-bold text-foreground font-mono">{fmt(totalPaidBills)}</p><p className="text-[10px] text-muted-foreground">{paidBills.length} conta(s)</p></div>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${overdueBills.length > 0 ? "bg-destructive/10" : "bg-primary/10"}`}>
+                    <AlertCircle className={`h-5 w-5 ${overdueBills.length > 0 ? "text-destructive" : "text-primary"}`} />
+                  </div>
+                  <div><p className="text-xs text-muted-foreground">Atrasadas</p><p className="font-bold text-foreground font-mono">{overdueBills.length}</p><p className="text-[10px] text-muted-foreground">{overdueBills.length > 0 ? "Atenção!" : "Tudo em dia ✅"}</p></div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {bills.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <Receipt className="h-14 w-14 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-medium mb-1">Nenhuma conta cadastrada</p>
+              <p className="text-sm opacity-70">Adicione suas contas do mês para controlar os pagamentos.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {bills.map((bill) => {
+                const isOverdue = !bill.is_paid && new Date(bill.due_date) < now;
+                const daysUntilDue = Math.ceil((new Date(bill.due_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={bill.id} className={`flex items-center justify-between p-4 rounded-lg border bg-card group hover:border-primary/20 transition-colors ${isOverdue ? "border-destructive/40" : bill.is_paid ? "border-primary/20 opacity-70" : "border-border"}`}>
+                    <div className="flex items-center gap-3">
+                      {bill.is_paid ? <CheckCircle2 className="h-5 w-5 text-primary" /> : isOverdue ? <AlertCircle className="h-5 w-5 text-destructive" /> : <Clock className="h-5 w-5 text-muted-foreground" />}
+                      <div>
+                        <p className={`text-sm font-medium ${bill.is_paid ? "line-through text-muted-foreground" : "text-foreground"}`}>{bill.description}</p>
+                        <div className="flex flex-wrap gap-2 mt-0.5 items-center">
+                          <Badge variant="outline" className="text-xs">{bill.category}</Badge>
+                          <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                            <CalendarDays className="h-3 w-3" />
+                            Venc: {new Date(bill.due_date).toLocaleDateString("pt-BR")}
+                            {isOverdue && !bill.is_paid && " (Atrasado!)"}
+                            {!bill.is_paid && !isOverdue && daysUntilDue <= 3 && daysUntilDue >= 0 && ` (${daysUntilDue}d)`}
+                          </span>
+                          {bill.is_recurring && (
+                            <Badge variant="outline" className="text-[10px] gap-1 border-blue-400/30 text-blue-400">
+                              <Layers className="h-2.5 w-2.5" /> Recorrente
+                              {bill.recurring_end_date && ` até ${new Date(bill.recurring_end_date).toLocaleDateString("pt-BR")}`}
+                            </Badge>
+                          )}
+                          {bill.is_paid && (
+                            <Badge className="text-[10px] gap-1 bg-primary/15 text-primary border-primary/30">
+                              <CheckCircle2 className="h-2.5 w-2.5" /> Paga
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold font-mono text-sm text-destructive">{fmt(Number(bill.amount))}</span>
+                      {!bill.is_paid && (
+                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => payBill(bill)}>
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Pagar
+                        </Button>
+                      )}
+                      <button onClick={() => deleteBill(bill.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
         {/* ========== CARTÕES DE CRÉDITO ========== */}
         <TabsContent value="cartoes" className="mt-4 space-y-6">
           <div className="flex justify-between items-center">
