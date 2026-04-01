@@ -41,6 +41,18 @@ interface Transaction {
   is_recurring: boolean;
 }
 
+interface Bill {
+  id: string;
+  description: string;
+  amount: number;
+  due_date: string;
+  category: string;
+  is_recurring: boolean;
+  recurring_end_date: string | null;
+  is_paid: boolean;
+  paid_at: string | null;
+}
+
 interface Budget {
   id: string;
   category: string;
