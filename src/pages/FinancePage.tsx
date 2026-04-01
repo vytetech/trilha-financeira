@@ -399,6 +399,49 @@ export default function FinancePage() {
     fetchData();
   };
 
+  const createBill = async () => {
+    if (!user || !billForm.amount || !billForm.description || !billForm.due_date) return;
+    await supabase.from("bills").insert({
+      user_id: user.id,
+      description: billForm.description,
+      amount: Number(billForm.amount),
+      due_date: billForm.due_date,
+      category: billForm.category,
+      is_recurring: billForm.is_recurring,
+      recurring_end_date: billForm.is_recurring && billForm.recurring_end_date ? billForm.recurring_end_date : null,
+    } as any);
+    setBillForm({ description: "", amount: "", due_date: "", category: "Outros", is_recurring: false, recurring_end_date: "" });
+    setBillDialogOpen(false);
+    fetchData();
+    toast({ title: "Conta adicionada! 📄" });
+  };
+
+  const payBill = async (bill: Bill) => {
+    if (!user) return;
+    // Create transaction
+    await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "expense",
+      amount: bill.amount,
+      category: bill.category,
+      description: bill.description,
+      transaction_date: new Date().toISOString().split("T")[0],
+      payment_status: "paid",
+      due_date: bill.due_date,
+      is_recurring: bill.is_recurring,
+    });
+    // Mark bill as paid
+    await supabase.from("bills").update({ is_paid: true, paid_at: new Date().toISOString() } as any).eq("id", bill.id);
+    fetchData();
+    toast({ title: `${bill.description} paga! ✅` });
+  };
+
+  const deleteBill = async (id: string) => {
+    await supabase.from("bills").delete().eq("id", id);
+    fetchData();
+    toast({ title: "Conta removida" });
+  };
+
   const totalBudgetLimit = budgets.reduce((a, b) => a + Number(b.monthly_limit), 0);
   const totalBudgetSpent = budgets.reduce((a, b) => {
     const spent = expenseTxs.filter(t => t.category === b.category).reduce((s, t) => s + Number(t.amount), 0);
