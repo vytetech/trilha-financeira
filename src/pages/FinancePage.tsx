@@ -108,13 +108,16 @@ export default function FinancePage() {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCardType[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [cardDialogOpen, setCardDialogOpen] = useState(false);
+  const [billDialogOpen, setBillDialogOpen] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [form, setForm] = useState({ type: "expense", amount: "", category: "Outros", description: "", date: new Date().toISOString().split("T")[0], payment_method: "", payment_status: "paid", due_date: "", credit_card_id: "", installments: "1", is_recurring: false });
   const [budgetForm, setBudgetForm] = useState({ category: "Alimentação", limit: "" });
   const [cardForm, setCardForm] = useState({ name: "", last_four: "", brand: "Visa", credit_limit: "", closing_day: "1", due_day: "10" });
+  const [billForm, setBillForm] = useState({ description: "", amount: "", due_date: "", category: "Outros", is_recurring: false, recurring_end_date: "" });
 
   const now = new Date();
   const [viewMonth, setViewMonth] = useState(now.getMonth() + 1);
