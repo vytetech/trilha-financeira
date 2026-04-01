@@ -142,16 +142,18 @@ export default function FinancePage() {
     const nextMonth = viewMonth + 1 > 12 ? 1 : viewMonth + 1;
     const nextYear = viewMonth + 1 > 12 ? viewYear + 1 : viewYear;
     const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
-    const [txRes, budgetRes, allTxRes, cardsRes] = await Promise.all([
+    const [txRes, budgetRes, allTxRes, cardsRes, billsRes] = await Promise.all([
       supabase.from("transactions").select("*").eq("user_id", user.id).gte("transaction_date", startDate).lt("transaction_date", endDate).order("transaction_date", { ascending: false }),
       supabase.from("budgets").select("*").eq("user_id", user.id).eq("month", viewMonth).eq("year", viewYear),
       supabase.from("transactions").select("*").eq("user_id", user.id).order("transaction_date", { ascending: true }),
       supabase.from("credit_cards").select("*").eq("user_id", user.id).eq("is_active", true).order("created_at", { ascending: true }),
+      supabase.from("bills").select("*").eq("user_id", user.id).gte("due_date", startDate).lt("due_date", endDate).order("due_date", { ascending: true }),
     ]);
     if (txRes.data) setTransactions(txRes.data);
     if (budgetRes.data) setBudgets(budgetRes.data);
     if (allTxRes.data) setAllTransactions(allTxRes.data);
     if (cardsRes.data) setCreditCards(cardsRes.data);
+    if (billsRes.data) setBills(billsRes.data as Bill[]);
   };
 
   useEffect(() => { fetchData(); }, [user, viewMonth, viewYear]);
