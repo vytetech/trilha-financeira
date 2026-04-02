@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import GlobalLeaderboard from "@/components/ranking/GlobalLeaderboard";
 
 interface AchievementDef {
   id: string;
@@ -176,14 +177,32 @@ export default function RankingPage() {
     });
   }, [earnedAchievements]);
 
+  const [rankingTab, setRankingTab] = useState("pessoal");
+
   return (
     <div className="space-y-6 max-w-5xl">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-primary" /> Ranking Pessoal
+          <Trophy className="h-6 w-6 text-primary" /> Ranking
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Acompanhe sua evolução, conquistas e progresso</p>
+        <p className="text-sm text-muted-foreground mt-1">Acompanhe sua evolução e compete com outros jogadores</p>
       </motion.div>
+
+      <Tabs value={rankingTab} onValueChange={setRankingTab}>
+        <TabsList className="bg-secondary border border-border mb-4">
+          <TabsTrigger value="pessoal" className="flex items-center gap-1.5">
+            <Star className="h-4 w-4" /> Pessoal
+          </TabsTrigger>
+          <TabsTrigger value="global" className="flex items-center gap-1.5">
+            <Crown className="h-4 w-4" /> Ranking Global
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="global" className="mt-0">
+          <GlobalLeaderboard />
+        </TabsContent>
+
+        <TabsContent value="pessoal" className="mt-0 space-y-6">
 
       {/* Profile Hero Card */}
       {profile && (
@@ -391,6 +410,8 @@ export default function RankingPage() {
           ))}
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
