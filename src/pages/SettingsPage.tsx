@@ -228,25 +228,27 @@ export default function SettingsPage() {
           {/* Current plan */}
           <SectionCard>
             <SectionHeader icon={<Crown className="h-4 w-4 text-primary" />} title="Seu Plano Atual" desc="Gerencie sua assinatura" />
-            <div className={`rounded-lg border p-4 flex items-center justify-between ${plan === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-secondary/50"}`}>
+            <div className={`rounded-lg border p-4 flex items-center justify-between ${plan !== "free" ? "border-primary/30 bg-primary/5" : "border-border bg-secondary/50"}`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${plan === "pro" ? "bg-primary/20" : "bg-muted"}`}>
-                  {plan === "pro" ? <Crown className="h-5 w-5 text-primary" /> : <User className="h-5 w-5 text-muted-foreground" />}
+                <div className={`p-2 rounded-lg ${plan !== "free" ? "bg-primary/20" : "bg-muted"}`}>
+                  {plan !== "free" ? <Crown className="h-5 w-5 text-primary" /> : <User className="h-5 w-5 text-muted-foreground" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground">{plan === "pro" ? "Plano Completo" : "Plano Free"}</p>
+                  <p className="font-semibold text-foreground">
+                    {plan === "ultimate" ? "Plano Ultimate" : plan === "pro" ? "Plano Pro" : "Plano Free"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {plan === "pro"
-                      ? `Acesso ilimitado • ${subscriptionEnd ? `Renova em ${new Date(subscriptionEnd).toLocaleDateString("pt-BR")}` : "Ativo"}`
+                    {plan !== "free"
+                      ? `${subscriptionEnd ? `Renova em ${new Date(subscriptionEnd).toLocaleDateString("pt-BR")}` : "Ativo"}`
                       : "Acesso limitado aos recursos básicos"}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className={`${plan === "pro" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"} border-none`}>
-                  {plan === "pro" ? "Ativo" : "Gratuito"}
+                <Badge className={`${plan !== "free" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"} border-none`}>
+                  {plan !== "free" ? "Ativo" : "Gratuito"}
                 </Badge>
-                {plan === "pro" && (
+                {plan !== "free" && (
                   <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={portalLoading} className="gap-1.5">
                     {portalLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
                     Gerenciar
@@ -256,82 +258,137 @@ export default function SettingsPage() {
             </div>
           </SectionCard>
 
-          {/* Plan comparison */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Plan comparison - 3 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Free */}
-            <div className={`rounded-xl border p-6 space-y-5 ${plan === "free" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+            <div className={`rounded-xl border p-5 space-y-4 ${plan === "free" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
               <div>
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground">Free</h3>
                   {plan === "free" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
                 </div>
-                <p className="text-3xl font-bold text-foreground mt-2">R$ 0<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
-                <p className="text-xs text-muted-foreground mt-1">Para começar a organizar sua vida</p>
+                <p className="text-2xl font-bold text-foreground mt-2">R$ 0<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Para começar</p>
               </div>
               <Separator />
-              <ul className="space-y-2.5">
-                 {[
-                  { text: "5 tarefas ativas", included: true },
-                  { text: "3 hábitos", included: true },
-                  { text: "2 metas ativas", included: true },
-                  { text: "3 sonhos ativos", included: true },
-                  { text: "Relatórios básicos", included: true },
-                  { text: "Investimentos limitados (5)", included: true },
-                  { text: "Relatórios avançados", included: false },
-                  { text: "Exportação PDF/Excel", included: false },
-                  { text: "Simulador financeiro", included: false },
-                  { text: "Conquistas premium", included: false },
-                ].map((item, i) => (
-                  <li key={i} className={`flex items-center gap-2 text-sm ${item.included ? "text-foreground" : "text-muted-foreground line-through opacity-50"}`}>
-                    {item.included ? <CheckCircle2 className="h-4 w-4 text-primary shrink-0" /> : <div className="h-4 w-4 rounded-full border border-border shrink-0" />}
-                    {item.text}
+              <ul className="space-y-2">
+                {[
+                  "5 tarefas",
+                  "3 hábitos",
+                  "2 metas",
+                  "3 sonhos",
+                  "5 investimentos",
+                  "50 transações/mês",
+                  "Relatórios básicos",
+                ].map((text, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                    {text}
+                  </li>
+                ))}
+                {["Exportação PDF/Excel", "Ranking global", "Suporte prioritário"].map((text, i) => (
+                  <li key={`no-${i}`} className="flex items-center gap-2 text-sm text-muted-foreground line-through opacity-50">
+                    <div className="h-3.5 w-3.5 rounded-full border border-border shrink-0" />
+                    {text}
                   </li>
                 ))}
               </ul>
-              {plan === "free" && (
+              {plan === "free" ? (
                 <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
+              ) : (
+                <div />
               )}
             </div>
 
-            {/* Pro / Completo */}
-            <div className={`rounded-xl border p-6 space-y-5 relative overflow-hidden ${plan === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+            {/* Pro */}
+            <div className={`rounded-xl border p-5 space-y-4 relative overflow-hidden ${plan === "pro" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
-                RECOMENDADO
+                POPULAR
               </div>
               <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2"><Crown className="h-5 w-5 text-primary" /> Completo</h3>
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2"><Crown className="h-5 w-5 text-primary" /> Pro</h3>
                   {plan === "pro" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
                 </div>
-                <p className="text-3xl font-bold text-foreground mt-2">R$ 19,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
-                <p className="text-xs text-muted-foreground mt-1">Desbloqueie todo o potencial do TRILHA</p>
+                <p className="text-2xl font-bold text-foreground mt-2">R$ 19,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Para quem leva a sério</p>
               </div>
               <Separator />
-              <ul className="space-y-2.5">
+              <ul className="space-y-2">
                 {[
-                  "Transações ilimitadas",
-                  "Metas ilimitadas",
-                  "Hábitos ilimitados",
-                  "Sonhos ilimitados",
-                  "Investimentos ilimitados",
-                  "Relatórios avançados completos",
-                  "Exportação PDF e Excel",
-                  "Simulador financeiro completo",
-                  "Conquistas e badges premium",
-                  "Suporte prioritário",
+                  "20 tarefas",
+                  "10 hábitos",
+                  "10 metas",
+                  "10 sonhos",
+                  "20 investimentos",
+                  "200 transações/mês",
+                  "Relatórios avançados",
+                  "Exportação PDF/Excel",
+                  "Ranking global",
                 ].map((text, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                    {text}
+                  </li>
+                ))}
+                {["Suporte prioritário"].map((text, i) => (
+                  <li key={`no-${i}`} className="flex items-center gap-2 text-sm text-muted-foreground line-through opacity-50">
+                    <div className="h-3.5 w-3.5 rounded-full border border-border shrink-0" />
                     {text}
                   </li>
                 ))}
               </ul>
               {plan === "pro" ? (
                 <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
+              ) : plan === "ultimate" ? (
+                <div />
               ) : (
-                <Button className="w-full gap-2" onClick={handleCheckout} disabled={checkoutLoading}>
+                <Button className="w-full gap-2" onClick={() => handleCheckout("pro")} disabled={checkoutLoading}>
                   {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                  {checkoutLoading ? "Redirecionando..." : "Fazer Upgrade"}
+                  Assinar Pro
+                </Button>
+              )}
+            </div>
+
+            {/* Ultimate */}
+            <div className={`rounded-xl border p-5 space-y-4 relative overflow-hidden ${plan === "ultimate" ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+              <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
+                COMPLETO
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2"><Zap className="h-5 w-5 text-primary" /> Ultimate</h3>
+                  {plan === "ultimate" && <Badge className="bg-primary/20 text-primary border-none text-xs">Atual</Badge>}
+                </div>
+                <p className="text-2xl font-bold text-foreground mt-2">R$ 39,90<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Sem limites, sem preocupações</p>
+              </div>
+              <Separator />
+              <ul className="space-y-2">
+                {[
+                  "Tarefas ilimitadas",
+                  "Hábitos ilimitados",
+                  "Metas ilimitadas",
+                  "Sonhos ilimitados",
+                  "Investimentos ilimitados",
+                  "Transações ilimitadas",
+                  "Relatórios avançados",
+                  "Exportação PDF/Excel",
+                  "Ranking global",
+                  "Suporte prioritário",
+                ].map((text, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                    {text}
+                  </li>
+                ))}
+              </ul>
+              {plan === "ultimate" ? (
+                <Button variant="outline" className="w-full" disabled>Plano Atual</Button>
+              ) : (
+                <Button className="w-full gap-2" onClick={() => handleCheckout("ultimate")} disabled={checkoutLoading}>
+                  {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crown className="h-4 w-4" />}
+                  Assinar Ultimate
                 </Button>
               )}
             </div>
@@ -344,6 +401,7 @@ export default function SettingsPage() {
               {[
                 { q: "Posso cancelar a qualquer momento?", a: "Sim, você pode cancelar sua assinatura quando quiser. Seu acesso continua até o final do período pago." },
                 { q: "Meus dados são mantidos se eu fizer downgrade?", a: "Sim, seus dados são preservados. Apenas o acesso a recursos premium será limitado." },
+                { q: "Posso trocar de plano?", a: "Sim! Você pode fazer upgrade ou downgrade a qualquer momento pelo portal de gerenciamento." },
                 { q: "Quais formas de pagamento são aceitas?", a: "Cartão de crédito internacional via Stripe. Pagamento seguro e criptografado." },
               ].map((faq, i) => (
                 <div key={i} className="py-2.5 border-b border-border last:border-0">
