@@ -4,17 +4,13 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 const PRICE_TO_PLAN: Record<string, string> = {
-  "price_1T8j6ZBI1DQVqElNYrTu6MPm": "pro",
-  "price_1THkaBBI1DQVqElNoSpDTdOb": "ultimate",
-};
-
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
+  price_1TITp7QtN7BZ4FpXYApXlWli: "pro",
+  price_1TITpbQtN7BZ4FpXKFAoXkHa: "ultimate",
 };
 
 serve(async (req) => {
@@ -22,39 +18,61 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
-    logStep("Function started");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) {
-      logStep("Auth error", { message: userError.message });
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "No authorization header" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        },
+      );
     }
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated");
-    logStep("User authenticated", { email: user.email });
+
+    const token = authHeader.replace("Bearer ", "").trim();
+
+    // Usar SERVICE_ROLE para verificar o JWT (suporta ES256)
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("Auth error:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized", details: authError?.message }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        },
+      );
+    }
+
+    if (!user.email) throw new Error("User email not found");
+    console.log("User authenticated:", user.email);
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({
+      email: user.email,
+      limit: 1,
+    });
 
+    // Sem customer = plano free
     if (customers.data.length === 0) {
-      logStep("No Stripe customer found");
-      await supabaseClient.from("profiles").update({ plan: "free" }).eq("user_id", user.id);
+      await supabaseAdmin
+        .from("profiles")
+        .update({ plan: "free" })
+        .eq("user_id", user.id);
       return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -62,63 +80,71 @@ serve(async (req) => {
     }
 
     const customerId = customers.data[0].id;
-    logStep("Found customer", { customerId });
+    console.log("Found customer:", customerId);
 
-    const activeSubscriptions = await stripe.subscriptions.list({
-      customer: customerId, status: "active", limit: 5,
-    });
-    const trialingSubscriptions = await stripe.subscriptions.list({
-      customer: customerId, status: "trialing", limit: 5,
-    });
+    const [activeSubs, trialingSubs] = await Promise.all([
+      stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 5,
+      }),
+      stripe.subscriptions.list({
+        customer: customerId,
+        status: "trialing",
+        limit: 5,
+      }),
+    ]);
 
-    const allSubs = [...activeSubscriptions.data, ...trialingSubscriptions.data];
+    const allSubs = [...activeSubs.data, ...trialingSubs.data];
 
     if (allSubs.length === 0) {
-      logStep("No active subscription");
-      await supabaseClient.from("profiles").update({ plan: "free" }).eq("user_id", user.id);
+      await supabaseAdmin
+        .from("profiles")
+        .update({ plan: "free" })
+        .eq("user_id", user.id);
       return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    // Determine best plan from active subscriptions
+    // Determinar o melhor plano ativo
     let bestPlan = "pro";
     let subscriptionEnd: string | null = null;
 
     for (const sub of allSubs) {
       const priceId = sub.items.data[0]?.price?.id;
       const detectedPlan = priceId ? PRICE_TO_PLAN[priceId] : null;
-      logStep("Sub found", { status: sub.status, priceId, detectedPlan });
+      console.log("Sub:", { status: sub.status, priceId, detectedPlan });
 
-      if (detectedPlan === "ultimate") {
-        bestPlan = "ultimate";
-      }
+      if (detectedPlan === "ultimate") bestPlan = "ultimate";
 
-      try {
-        const endTimestamp = sub.current_period_end || sub.trial_end;
-        if (endTimestamp && typeof endTimestamp === "number") {
-          subscriptionEnd = new Date(endTimestamp * 1000).toISOString();
-        }
-      } catch (e) {
-        logStep("Date parsing error", { error: String(e) });
+      const endTs = sub.current_period_end || sub.trial_end;
+      if (endTs && typeof endTs === "number") {
+        subscriptionEnd = new Date(endTs * 1000).toISOString();
       }
     }
 
-    logStep("Best plan determined", { bestPlan, subscriptionEnd });
-    await supabaseClient.from("profiles").update({ plan: bestPlan }).eq("user_id", user.id);
+    console.log("Best plan:", bestPlan);
+    await supabaseAdmin
+      .from("profiles")
+      .update({ plan: bestPlan })
+      .eq("user_id", user.id);
 
-    return new Response(JSON.stringify({
-      subscribed: true,
-      plan: bestPlan,
-      subscription_end: subscriptionEnd,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        subscribed: true,
+        plan: bestPlan,
+        subscription_end: subscriptionEnd,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: msg });
+    console.error("[CHECK-SUBSCRIPTION] Error:", msg);
     return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
