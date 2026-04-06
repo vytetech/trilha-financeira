@@ -22,6 +22,8 @@ import ReportsPage from "@/pages/ReportsPage";
 import RankingPage from "@/pages/RankingPage";
 import SettingsPage from "@/pages/SettingsPage";
 import LandingPage from "@/pages/LandingPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,13 +37,23 @@ const App = () => (
         <AuthProvider>
           <SubscriptionProvider>
             <Routes>
+              {/* Públicas */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
 
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              {/* Protegidas */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/habits" element={<HabitsPage />} />
