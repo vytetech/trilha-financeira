@@ -10,7 +10,12 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-export type PlanType = "free" | "pro" | "ultimate";
+export type PlanType =
+  | "free"
+  | "pro_monthly"
+  | "pro_yearly"
+  | "ultimate_monthly"
+  | "ultimate_yearly";
 
 export const PLAN_LIMITS = {
   free: {
@@ -21,7 +26,7 @@ export const PLAN_LIMITS = {
     investments: 5,
     transactions: 50,
   },
-  pro: {
+  pro_monthly: {
     tasks: 20,
     habits: 10,
     goals: 10,
@@ -29,7 +34,23 @@ export const PLAN_LIMITS = {
     investments: 20,
     transactions: 200,
   },
-  ultimate: {
+  pro_yearly: {
+    tasks: 20,
+    habits: 10,
+    goals: 10,
+    dreams: 10,
+    investments: 20,
+    transactions: 200,
+  },
+  ultimate_monthly: {
+    tasks: Infinity,
+    habits: Infinity,
+    goals: Infinity,
+    dreams: Infinity,
+    investments: Infinity,
+    transactions: Infinity,
+  },
+  ultimate_yearly: {
     tasks: Infinity,
     habits: Infinity,
     goals: Infinity,
@@ -40,20 +61,37 @@ export const PLAN_LIMITS = {
 } as const;
 
 export const PLAN_PRICES = {
-  pro: {
+  pro_monthly: {
     price_id: "price_1TIUBJQtN7BZ4FpXU9k2e2oG",
-    product_id: "prod_UH2FNivRXJDDqv",
     monthly: 19.9,
   },
-  ultimate: {
+  pro_yearly: {
+    price_id: "price_1TMGaXQtN7BZ4FpXivhO1rYU",
+    yearly: 199.9,
+  },
+  ultimate_monthly: {
     price_id: "price_1TIUBVQtN7BZ4FpXEbNmnYHc",
-    product_id: "prod_UH2FNivRXJDDqv",
     monthly: 39.9,
+  },
+  ultimate_yearly: {
+    price_id: "price_1TMGbgQtN7BZ4FpXLAGPKcdT",
+    yearly: 399.9,
   },
 } as const;
 
+export function getPlanFamily(plan: PlanType): "free" | "pro" | "ultimate" {
+  if (plan.startsWith("ultimate")) return "ultimate";
+  if (plan.startsWith("pro")) return "pro";
+  return "free";
+}
+
+export function isPaidPlan(plan: PlanType): boolean {
+  return plan !== "free";
+}
+
 interface SubscriptionContextType {
   plan: PlanType;
+  planFamily: "free" | "pro" | "ultimate";
   subscribed: boolean;
   subscriptionEnd: string | null;
   loading: boolean;
@@ -80,12 +118,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Refs para evitar loop de chamadas
   const isFetchingRef = useRef(false);
   const lastCheckedUserRef = useRef<string | null>(null);
 
   const checkSubscription = useCallback(async () => {
-    // Bloqueia chamada duplicada enquanto já está buscando
     if (isFetchingRef.current) return;
 
     const accessToken = session?.access_token;
@@ -113,8 +149,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.access_token]);
 
-  // Roda apenas quando o user.id muda (login/logout)
-  // Não depende do objeto session inteiro para evitar re-renders
   useEffect(() => {
     if (!user?.id) {
       setLoading(false);
@@ -125,20 +159,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Evita chamar duas vezes para o mesmo usuário
     if (lastCheckedUserRef.current === user.id) return;
     lastCheckedUserRef.current = user.id;
 
     checkSubscription();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresh a cada 5 minutos (aumentado de 1min para evitar spam)
   useEffect(() => {
     if (!user?.id || !session?.access_token) return;
 
     const interval = setInterval(
       () => {
-        isFetchingRef.current = false; // libera para nova chamada
+        isFetchingRef.current = false;
         checkSubscription();
       },
       5 * 60 * 1000,
@@ -146,6 +178,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     return () => clearInterval(interval);
   }, [user?.id, session?.access_token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const planFamily = getPlanFamily(plan);
 
   const canCreate = (
     resource: keyof typeof PLAN_LIMITS.free,
@@ -171,6 +205,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     <SubscriptionContext.Provider
       value={{
         plan,
+        planFamily,
         subscribed,
         subscriptionEnd,
         loading,
