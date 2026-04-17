@@ -46,7 +46,7 @@ serve(async (req) => {
     }
 
     // 3. CRIAR SESSÃO DO PORTAL (Origin ajustada para sua porta 8080)
-    const origin = req.headers.get("origin") || "http://localhost:8080";
+    const origin = req.headers.get("origin") || "https://trilhax.vercel.app/";
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customers.data[0].id,
