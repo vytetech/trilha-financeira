@@ -79,7 +79,7 @@ serve(async (req) => {
 
     const customerId =
       customers.data.length > 0 ? customers.data[0].id : undefined;
-    const origin = req.headers.get("origin") || "http://localhost:8080";
+    const origin = req.headers.get("origin") || "https://trilhax.vercel.app/";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
