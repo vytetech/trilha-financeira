@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useSubscription, getPlanFamily } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -319,7 +319,11 @@ export default function SettingsPage() {
                     <Zap className="h-3 w-3 mr-1" /> {profile?.xp || 0} XP
                   </Badge>
                   <Badge variant="outline" className="text-xs capitalize">
-                    {plan}
+                    {getPlanFamily(plan) === "ultimate"
+                      ? "Ultimate"
+                      : getPlanFamily(plan) === "pro"
+                        ? "Pro"
+                        : "Free"}
                   </Badge>
                 </div>
               </div>
