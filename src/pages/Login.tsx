@@ -61,6 +61,9 @@ export default function Login() {
             Organize sua vida, controle suas finanças e alcance seus objetivos
             com inteligência.
           </p>
+          <p className="text-xs text-muted-foreground/60 mt-6 tracking-widest transition-all duration-500 hover:text-primary cursor-default select-none">
+            VyteTech · TRILHA.X
+          </p>
         </motion.div>
       </div>
 
