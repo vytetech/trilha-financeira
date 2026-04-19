@@ -53,42 +53,29 @@ export default function PublicLayout() {
             </span>
           </button>
 
-          {/* Nav links — só na landing */}
-          {isLanding ? (
-            <div className="hidden md:flex items-center gap-8">
-              {[
-                { label: "Módulos", id: "modules" },
-                { label: "Gamificação", id: "gamification" },
-                { label: "Planos", id: "pricing" },
-                { label: "Depoimentos", id: "testimonials" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => scrollTo(item.id)}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            /* Breadcrumb em páginas internas */
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(from)}
-              className="gap-2 text-muted-foreground hidden md:flex"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {from === "/signup" ? "Voltar ao cadastro" : "Voltar ao início"}
-            </Button>
-          )}
+          {/* Nav links — sempre visível */}
+          <div className="hidden md:flex items-center gap-8">
+            {[
+              { label: "Módulos", id: "modules" },
+              { label: "Gamificação", id: "gamification" },
+              { label: "Depoimentos", id: "testimonials" },
+              { label: "Planos", id: "pricing" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
           {/* CTAs */}
           <div className="flex items-center">
             <button
               onClick={() => navigate("/login")}
-              className="text-sm font-medium text-muted-foreground border border-border rounded-lg px-4 py-2 hover:border-primary hover:text-primary transition-all duration-200"
+              className="text-md font-bold text-muted-foreground border border-border rounded-lg px-5 py-3 hover:border-primary hover:text-primary transition-all duration-200"
             >
               Entrar
             </button>
