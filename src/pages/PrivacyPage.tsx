@@ -1,23 +1,29 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 export default function PrivacyPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="max-w-4xl mx-auto px-6 pt-28 pb-24">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline underline-offset-4 transition-all duration-200 mb-6"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar ao início
+        </button>
+
         <h1 className="text-3xl font-black text-foreground mb-2">
           Política de Privacidade
         </h1>
         <p className="text-sm text-muted-foreground mb-10">
-          Última atualização:{" "}
-          {new Date().toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })}
+          Última atualização: 19 de abril de 2026
         </p>
 
         <div className="space-y-8 text-muted-foreground">
