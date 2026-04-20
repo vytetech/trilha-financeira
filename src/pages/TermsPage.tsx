@@ -23,7 +23,7 @@ export default function TermsPage() {
           Termos de Uso
         </h1>
         <p className="text-sm text-muted-foreground mb-10">
-          Última atualização: 19 de abril de 2026
+          Última atualização: 20 de abril de 2026
         </p>
 
         <div className="space-y-8 text-muted-foreground">
@@ -195,10 +195,10 @@ export default function TermsPage() {
               <li>
                 <strong className="text-foreground">E-mail:</strong>{" "}
                 <a
-                  href="mailto:trilha.x@gmail.com"
+                  href="mailto:trilhax.app@gmail.com"
                   className="text-primary hover:underline"
                 >
-                  trilha.x@gmail.com
+                  trilhax.app@gmail.com
                 </a>
               </li>
             </ul>

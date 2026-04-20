@@ -123,7 +123,14 @@ export default function PublicLayout() {
               </p>
               <p className="text-xs text-muted-foreground">
                 Um produto da{" "}
-                <span className="text-primary font-bold">VyteTech</span>
+                <a
+                  href="https://www.vytetech.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary font-bold hover:underline"
+                >
+                  VyteTech
+                </a>
               </p>
             </div>
 
@@ -233,15 +240,22 @@ export default function PublicLayout() {
               © {new Date().getFullYear()}{" "}
               <span className="text-foreground font-bold">TRILHA.X</span> · Um
               produto da{" "}
-              <span className="text-primary font-bold">VyteTech</span>. Todos os
-              direitos reservados.
+              <a
+                href="https://www.vytetech.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-bold hover:underline"
+              >
+                VyteTech
+              </a>
+              . Todos os direitos reservados.
             </p>
             <div className="flex items-center gap-5 text-xs text-muted-foreground">
               <a
-                href="mailto:trilha.x@gmail.com"
-                className="hover:text-primary transition-colors flex items-center gap-1.5"
+                href="mailto:trilhax.app@gmail.com"
+                className="hover:text-primary hover:underline transition-colors flex items-center gap-1.5"
               >
-                <Mail className="h-4 w-4" /> trilha.x@gmail.com
+                <Mail className="h-4 w-4" /> trilhax.app@gmail.com
               </a>
             </div>
           </div>
