@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,16 +11,23 @@ import { useToast } from "@/hooks/use-toast";
 import logoTrilha from "@/assets/logo-trilha.x.png";
 
 export default function Signup() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  const location = useLocation();
+  const saved = (location.state as any)?.formData || {};
+
+  const [fullName, setFullName] = useState(saved.fullName || "");
+  const [email, setEmail] = useState(saved.email || "");
+  const [password, setPassword] = useState(saved.password || "");
+  const [confirmPassword, setConfirmPassword] = useState(
+    saved.confirmPassword || "",
+  );
+  const [acceptTerms, setAcceptTerms] = useState(saved.acceptTerms || false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const formData = { fullName, email, password, confirmPassword, acceptTerms };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,7 +261,7 @@ export default function Signup() {
                 Li e concordo com os{" "}
                 <Link
                   to="/terms"
-                  state={{ from: "/signup" }}
+                  state={{ from: "/signup", formData }}
                   className="text-primary hover:underline font-medium"
                 >
                   Termos de Uso
@@ -262,7 +269,7 @@ export default function Signup() {
                 e a{" "}
                 <Link
                   to="/privacy"
-                  state={{ from: "/signup" }}
+                  state={{ from: "/signup", formData }}
                   className="text-primary hover:underline font-medium"
                 >
                   Política de Privacidade

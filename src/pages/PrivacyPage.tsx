@@ -1,9 +1,20 @@
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 export default function PrivacyPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from || "/";
+  const formData = (location.state as any)?.formData;
+
+  const handleBack = () => {
+    if (from === "/signup") {
+      navigate("/signup", { state: { formData } });
+    } else {
+      navigate(from);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-6 pt-28 pb-24">
@@ -12,11 +23,11 @@ export default function PrivacyPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <button
-          onClick={() => navigate("/")}
+          onClick={handleBack}
           className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline underline-offset-4 transition-all duration-200 mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar ao início
+          {from === "/signup" ? "Voltar ao cadastro" : "Voltar ao início"}
         </button>
 
         <h1 className="text-3xl font-black text-foreground mb-2">
