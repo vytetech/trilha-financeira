@@ -13,6 +13,7 @@ import logoTrilha from "@/assets/logo-trilha.x.png";
 export default function Signup() {
   const location = useLocation();
   const saved = (location.state as any)?.formData || {};
+  const from = (location.state as any)?.from || "/";
 
   const [fullName, setFullName] = useState(saved.fullName || "");
   const [email, setEmail] = useState(saved.email || "");
@@ -27,6 +28,7 @@ export default function Signup() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Dados atuais para passar ao navegar para termos/privacidade
   const formData = { fullName, email, password, confirmPassword, acceptTerms };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,7 +130,7 @@ export default function Signup() {
 
           {/* Back button */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />

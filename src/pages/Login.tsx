@@ -61,7 +61,7 @@ export default function Login() {
             Organize sua vida, controle suas finanças e alcance seus objetivos
             com inteligência.
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-6 tracking-widest transition-all duration-500 hover:text-primary cursor-default select-none">
+          <p className="text-xs text-muted-foreground/40 mt-6 tracking-widest uppercase transition-all duration-500 hover:text-primary hover:tracking-[0.3em] cursor-default select-none">
             VyteTech · TRILHA.X
           </p>
         </motion.div>
@@ -89,7 +89,7 @@ export default function Login() {
 
           {/* Back button */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -216,6 +216,7 @@ export default function Login() {
             Não tem uma conta?{" "}
             <Link
               to="/signup"
+              state={{ from: "/login" }}
               className="text-primary hover:underline font-medium"
             >
               Criar conta grátis
