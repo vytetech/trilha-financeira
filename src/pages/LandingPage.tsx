@@ -371,18 +371,16 @@ export default function LandingPage() {
             >
               Começar Grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
+            <button
               onClick={() =>
                 document
                   .getElementById("modules")
                   ?.scrollIntoView({ behavior: "smooth" })
               }
-              className="text-lg px-10 h-14"
+              className="text-lg px-10 h-14 font-bold text-muted-foreground border border-border rounded-lg hover:border-primary hover:text-primary transition-all duration-200 flex items-center gap-2"
             >
-              <Eye className="mr-2 h-5 w-5" /> Ver Módulos
-            </Button>
+              <Eye className="h-5 w-5" /> Ver Módulos
+            </button>
           </motion.div>
 
           {/* Stats */}
