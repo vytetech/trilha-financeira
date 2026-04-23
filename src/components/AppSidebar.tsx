@@ -9,12 +9,13 @@ import {
   Trophy,
   Settings,
   LogOut,
-  Zap,
   Sparkles,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,18 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import logoTrilha from "@/assets/logo-trilha.x.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -40,19 +53,48 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const [profileName, setProfileName] = useState<string>("");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.full_name) setProfileName(data.full_name);
+      });
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
 
+  const fullName = profileName || user?.user_metadata?.full_name || "Usuário";
+  const email = user?.email || "";
+  const initials = fullName
+    .split(" ")
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <Sidebar className="border-r border-border bg-sidebar">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
-        <Zap className="h-6 w-6 text-primary" />
-        <span className="text-xl font-bold gradient-text">TRILHA</span>
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+        <img
+          src={logoTrilha}
+          alt="TRILHA.X"
+          className="h-10 w-10 rounded-lg object-cover border border-primary/40 shadow-[0_0_8px_rgba(34,197,94,0.25)]"
+        />
+        <span className="text-xl font-black gradient-text tracking-tighter uppercase">
+          TRILHA.X
+        </span>
       </div>
 
       <SidebarContent className="px-3 py-4">
@@ -66,9 +108,9 @@ export function AppSidebar() {
                       to={item.url}
                       end={item.url === "/dashboard"}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                      activeClassName="bg-primary/10 text-primary neon-text font-medium"
+                      activeClassName="bg-primary/10 text-primary font-medium"
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -79,14 +121,48 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-3 pb-4">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Sair</span>
-        </button>
+      <SidebarFooter className="px-3 pb-4 space-y-2">
+        {/* Perfil do usuário */}
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sidebar-accent/50 border border-border">
+          <div className="h-8 w-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+            <span className="text-primary font-bold text-xs">{initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              {fullName.split(" ").slice(0, 2).join(" ")}
+            </p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {email}
+            </p>
+          </div>
+        </div>
+
+        {/* Botão sair com confirmação */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full">
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>Sair</span>
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Sair da conta?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você será desconectado e redirecionado para a tela de login.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleLogout}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SidebarFooter>
     </Sidebar>
   );
