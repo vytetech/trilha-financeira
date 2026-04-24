@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 
 export type PlanType =
   | "free"
