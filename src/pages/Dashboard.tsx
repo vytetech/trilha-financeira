@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Wallet,
   Target,
@@ -12,11 +12,10 @@ import {
   ArrowDownRight,
   BarChart3,
   Sparkles,
-  Calendar,
-  ListChecks,
   Repeat,
   Star,
   ChevronRight,
+  TrendingDown,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,12 +154,18 @@ export default function Dashboard() {
   }, [user]);
 
   const xp = profile?.xp || 0;
+  const xpTotal = profile?.xp_total || 0;
   const level = profile?.level || 1;
   const nextLevelXP = level * 100;
-  const xpProgress = (xp / nextLevelXP) * 100;
+  const xpProgress = Math.min(Math.max((xp / nextLevelXP) * 100, 0), 100);
+
   const balance = income - expenses;
   const savingsRate =
     income > 0 ? Math.round(((income - expenses) / income) * 100) : 0;
+  const savingsRateDisplay = Math.max(savingsRate, 0);
+  const isNegativeBalance = balance < 0;
+  const isNegativeSavings = savingsRate < 0;
+
   const fmt = (v: number) =>
     `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
   const habitsProgress =
@@ -168,33 +173,51 @@ export default function Dashboard() {
   const name =
     profile?.full_name || user?.user_metadata?.full_name || "Usuário";
 
+  // Valor mínimo de 5 para evitar colapso visual do shape no radar
+  const MIN_RADAR = 5;
+  const clamp = (v: number) => Math.min(Math.max(v, MIN_RADAR), 100);
+
   const radarData = [
-    { attr: "Foco", value: Math.min(tasksDone * 5, 100), fullMark: 100 },
     {
-      attr: "Disciplina",
-      value: Math.min(habitsToday * 20, 100),
+      attr: "Foco",
+      raw: Math.min(Math.max(tasksDone * 5, 0), 100),
+      value: clamp(tasksDone * 5),
       fullMark: 100,
     },
     {
-      attr: "Mental",
-      value: Math.min((goalsActive + goalsCompleted) * 10, 100),
+      attr: "Disciplina",
+      raw: Math.min(Math.max(habitsToday * 20, 0), 100),
+      value: clamp(habitsToday * 20),
       fullMark: 100,
     },
     {
       attr: "Financeiro",
-      value: income > 0 ? Math.min(savingsRate, 100) : 0,
+      raw: income > 0 ? Math.max(Math.min(savingsRateDisplay, 100), 0) : 0,
+      value: income > 0 ? clamp(savingsRateDisplay) : MIN_RADAR,
       fullMark: 100,
     },
     {
       attr: "Produtividade",
-      value: Math.min((tasksDone + habitsToday) * 5, 100),
+      raw: Math.min(Math.max((tasksDone + habitsToday) * 5, 0), 100),
+      value: clamp((tasksDone + habitsToday) * 5),
       fullMark: 100,
     },
-    { attr: "Consistência", value: Math.min(streak * 5, 100), fullMark: 100 },
+    {
+      attr: "Consistência",
+      raw: Math.min(Math.max(streak * 5, 0), 100),
+      value: clamp(streak * 5),
+      fullMark: 100,
+    },
+    {
+      attr: "Mental",
+      raw: Math.min(Math.max((goalsActive + goalsCompleted) * 10, 0), 100),
+      value: clamp((goalsActive + goalsCompleted) * 10),
+      fullMark: 100,
+    },
   ];
 
   const overallScore = Math.round(
-    radarData.reduce((a, d) => a + d.value, 0) / radarData.length,
+    radarData.reduce((a, d) => a + d.raw, 0) / radarData.length,
   );
 
   const greeting = () => {
@@ -223,8 +246,7 @@ export default function Dashboard() {
               , continue crescendo 🚀
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Level badge */}
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 bg-secondary/80 rounded-xl border border-border px-4 py-2.5">
               <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center border-2 border-primary/30">
                 <span className="text-primary font-bold text-sm">{level}</span>
@@ -241,7 +263,17 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            {/* Score */}
+            <div className="hidden sm:flex items-center gap-2 bg-secondary/80 rounded-xl border border-border px-4 py-2.5">
+              <Zap className="h-4 w-4 text-primary" />
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  XP Total
+                </p>
+                <p className="font-bold text-foreground font-mono text-sm">
+                  {xpTotal.toLocaleString("pt-BR")}
+                </p>
+              </div>
+            </div>
             <div className="hidden sm:flex items-center gap-2 bg-secondary/80 rounded-xl border border-border px-4 py-2.5">
               <Sparkles className="h-4 w-4 text-primary" />
               <div>
@@ -257,17 +289,17 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* Quick Stats Row */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             icon: <Wallet className="h-4 w-4" />,
             label: "Saldo do Mês",
             value: fmt(balance),
-            trend: balance >= 0 ? "Positivo" : "Negativo",
-            trendUp: balance >= 0,
-            iconColor: "text-primary",
-            bg: "bg-primary/10",
+            trend: isNegativeBalance ? "Negativo" : "Positivo",
+            trendUp: !isNegativeBalance,
+            iconColor: isNegativeBalance ? "text-destructive" : "text-primary",
+            bg: isNegativeBalance ? "bg-destructive/10" : "bg-primary/10",
             onClick: () => navigate("/finances"),
           },
           {
@@ -282,10 +314,13 @@ export default function Dashboard() {
           },
           {
             icon: <CheckSquare className="h-4 w-4" />,
-            label: "Tarefas Hoje",
+            label: "Tarefas Concluídas",
             value: `${tasksDone}`,
-            trend: `${tasksPending} pendentes`,
-            trendUp: true,
+            trend:
+              tasksPending > 0
+                ? `${tasksPending} pendente${tasksPending > 1 ? "s" : ""}`
+                : "Tudo em dia!",
+            trendUp: tasksPending === 0,
             iconColor: "text-primary",
             bg: "bg-primary/10",
             onClick: () => navigate("/tasks"),
@@ -294,7 +329,7 @@ export default function Dashboard() {
             icon: <Flame className="h-4 w-4" />,
             label: "Streak",
             value: `${streak}d`,
-            trend: `${habitsToday}/${totalHabits} hábitos`,
+            trend: `${habitsToday}/${totalHabits} hábitos hoje`,
             trendUp: streak > 0,
             iconColor: "text-orange-400",
             bg: "bg-orange-400/10",
@@ -338,9 +373,9 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Radar - takes 2 cols */}
+        {/* Radar */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -355,10 +390,15 @@ export default function Dashboard() {
               {overallScore}% geral
             </Badge>
           </div>
-          <div className="p-5 flex items-center gap-4">
+          <div className="p-4 flex items-center gap-4">
             <div className="flex-1 h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData} cx="50%" cy="50%">
+                <RadarChart
+                  data={radarData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius="72%"
+                >
                   <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.6} />
                   <PolarAngleAxis
                     dataKey="attr"
@@ -372,39 +412,61 @@ export default function Dashboard() {
                     dataKey="value"
                     stroke="hsl(var(--primary))"
                     fill="hsl(var(--primary))"
-                    fillOpacity={0.15}
+                    fillOpacity={0.18}
                     strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", r: 3 }}
                   />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-            <div className="hidden md:flex flex-col gap-2 w-36">
-              {radarData.map((d, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between text-xs"
-                >
-                  <span className="text-muted-foreground">{d.attr}</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-12 rounded-full bg-secondary overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${d.value}%` }}
-                      />
-                    </div>
-                    <span className="font-mono text-foreground w-7 text-right">
-                      {d.value}
+            <div className="hidden md:flex flex-col gap-2.5 w-44">
+              {radarData.map((d, i) => {
+                // Sidebar mostra valor real (raw), financeiro pode ser negativo
+                const displayVal =
+                  d.attr === "Financeiro" ? savingsRate : d.raw;
+                const isNeg = displayVal < 0;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-xs"
+                  >
+                    <span className="text-muted-foreground w-24 truncate">
+                      {d.attr}
                     </span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-1.5 w-12 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            isNeg ? "bg-destructive" : "bg-primary",
+                          )}
+                          style={{ width: `${d.raw}%` }}
+                        />
+                      </div>
+                      <span
+                        className={cn(
+                          "font-mono w-8 text-right tabular-nums",
+                          isNeg ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {isNeg ? displayVal : d.raw}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+              {isNegativeSavings && (
+                <p className="text-[10px] text-destructive/80 mt-1 leading-tight">
+                  ⚠ Saldo negativo afeta seu score financeiro
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
 
-        {/* Right column - stacked cards */}
+        {/* Right column */}
         <div className="space-y-4">
-          {/* Habits progress */}
+          {/* Habits */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -420,17 +482,25 @@ export default function Dashboard() {
                 {habitsToday}/{totalHabits}
               </span>
             </div>
-            <Progress value={habitsProgress} className="h-2 mb-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">
-                {habitsProgress}% concluído
-              </span>
-              {habitsProgress === 100 && totalHabits > 0 && (
-                <span className="text-[10px] text-primary font-semibold flex items-center gap-1">
-                  <Star className="h-3 w-3" /> Dia perfeito!
-                </span>
-              )}
-            </div>
+            {totalHabits === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nenhum hábito ativo. Adicione hábitos para começar!
+              </p>
+            ) : (
+              <>
+                <Progress value={habitsProgress} className="h-2 mb-2" />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">
+                    {habitsProgress}% concluído
+                  </span>
+                  {habitsProgress === 100 && (
+                    <span className="text-[10px] text-primary font-semibold flex items-center gap-1">
+                      <Star className="h-3 w-3" /> Dia perfeito!
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </motion.div>
 
           {/* Main Goal */}
@@ -450,19 +520,31 @@ export default function Dashboard() {
                 <Progress
                   value={
                     mainGoal.target_value > 0
-                      ? (mainGoal.current_value / mainGoal.target_value) * 100
+                      ? Math.min(
+                          (mainGoal.current_value / mainGoal.target_value) *
+                            100,
+                          100,
+                        )
                       : 0
                   }
                   className="h-2 mb-2"
                 />
-                <span className="text-[10px] text-muted-foreground">
-                  {mainGoal.target_value > 0
-                    ? Math.round(
-                        (mainGoal.current_value / mainGoal.target_value) * 100,
-                      )
-                    : 0}
-                  % concluído
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">
+                    {mainGoal.target_value > 0
+                      ? Math.round(
+                          (mainGoal.current_value / mainGoal.target_value) *
+                            100,
+                        )
+                      : 0}
+                    % concluído
+                  </span>
+                  {mainGoal.target_value > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {mainGoal.current_value}/{mainGoal.target_value}
+                    </span>
+                  )}
+                </div>
               </>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -471,12 +553,13 @@ export default function Dashboard() {
             )}
           </motion.div>
 
-          {/* Achievements */}
+          {/* Conquistas */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="rounded-xl border border-border bg-card p-5"
+            onClick={() => navigate("/ranking")}
+            className="rounded-xl border border-border bg-card p-5 hover:border-primary/20 transition-all cursor-pointer"
           >
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-2">
               <Trophy className="h-4 w-4 text-yellow-400" /> Conquistas
@@ -486,9 +569,14 @@ export default function Dashboard() {
                 {achievements}
               </span>
               <span className="text-[10px] text-muted-foreground">
-                desbloqueadas
+                desbloqueada{achievements !== 1 ? "s" : ""}
               </span>
             </div>
+            {achievements === 0 && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Complete tarefas e hábitos para ganhar conquistas
+              </p>
+            )}
           </motion.div>
         </div>
       </div>
@@ -497,13 +585,18 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.35 }}
         className="rounded-xl border border-border bg-card overflow-hidden"
       >
-        <div className="px-5 py-3 border-b border-border/50">
+        <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Wallet className="h-4 w-4 text-primary" /> Resumo Financeiro do Mês
           </h3>
+          {isNegativeBalance && (
+            <Badge variant="destructive" className="text-[10px]">
+              Saldo negativo
+            </Badge>
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border/30">
           {[
@@ -512,24 +605,33 @@ export default function Dashboard() {
               value: fmt(income),
               color: "text-primary",
               icon: <ArrowUpRight className="h-3.5 w-3.5" />,
+              subtext: income === 0 ? "Nenhuma receita" : null,
             },
             {
               label: "Despesas",
               value: fmt(expenses),
               color: "text-destructive",
               icon: <ArrowDownRight className="h-3.5 w-3.5" />,
+              subtext: expenses === 0 ? "Nenhuma despesa" : null,
             },
             {
               label: "Economia",
               value: `${savingsRate}%`,
               color: savingsRate >= 0 ? "text-primary" : "text-destructive",
-              icon: <TrendingUp className="h-3.5 w-3.5" />,
+              icon:
+                savingsRate >= 0 ? (
+                  <TrendingUp className="h-3.5 w-3.5" />
+                ) : (
+                  <TrendingDown className="h-3.5 w-3.5" />
+                ),
+              subtext: isNegativeSavings ? "Gastos > Receitas" : null,
             },
             {
               label: "Investido",
               value: fmt(invested),
               color: "text-foreground",
               icon: <BarChart3 className="h-3.5 w-3.5" />,
+              subtext: invested === 0 ? "Sem posição" : null,
             },
           ].map((item, i) => (
             <div key={i} className="p-5 text-center">
@@ -552,6 +654,11 @@ export default function Dashboard() {
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
                 {item.label}
               </p>
+              {item.subtext && (
+                <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                  {item.subtext}
+                </p>
+              )}
             </div>
           ))}
         </div>

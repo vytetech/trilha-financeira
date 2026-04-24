@@ -53,7 +53,6 @@ const menuItems = [
   { title: "Configurações", url: "/settings", icon: Settings },
 ];
 
-// Configurações visuais por plano
 const PLAN_CONFIG = {
   free: {
     label: "Free",
@@ -78,11 +77,10 @@ const PLAN_CONFIG = {
   },
 };
 
-// Ring SVG de progresso de XP em volta do avatar
 function XPRing({
   progress,
   planFamily,
-  size = 44,
+  size = 38,
 }: {
   progress: number;
   planFamily: "free" | "pro" | "ultimate";
@@ -90,9 +88,8 @@ function XPRing({
 }) {
   const r = (size - 4) / 2;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (progress / 100) * circ;
+  const offset = circ - (Math.min(Math.max(progress, 0), 100) / 100) * circ;
   const color = PLAN_CONFIG[planFamily].ring;
-
   return (
     <svg
       width={size}
@@ -136,15 +133,31 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [profileName, setProfileName] = useState<string>("");
-  const [xp, setXp] = useState(0);
+  const [xp, setXp] = useState(0); // XP dentro do nível atual
+  const [xpTotal, setXpTotal] = useState(0); // XP total acumulado (para ranking)
   const [level, setLevel] = useState(1);
 
   const planFamily = getPlanFamily(plan) as "free" | "pro" | "ultimate";
   const planCfg = PLAN_CONFIG[planFamily];
 
-  // XP e nível mudam junto com o plano em tempo real
   useEffect(() => {
     if (!user) return;
+
+    // Fetch inicial
+    supabase
+      .from("profiles")
+      .select("full_name, xp, xp_total, level")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (!data) return;
+        if (data.full_name) setProfileName(data.full_name);
+        setXp(data.xp ?? 0);
+        setXpTotal(data.xp_total ?? 0);
+        setLevel(data.level ?? 1);
+      });
+
+    // Realtime — atualiza em tempo real quando XP/level/plano mudam
     const channel = supabase
       .channel("profile-sidebar")
       .on(
@@ -159,22 +172,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           const d = payload.new as any;
           if (d.full_name) setProfileName(d.full_name);
           if (d.xp !== undefined) setXp(d.xp);
+          if (d.xp_total !== undefined) setXpTotal(d.xp_total);
           if (d.level !== undefined) setLevel(d.level);
         },
       )
       .subscribe();
-
-    supabase
-      .from("profiles")
-      .select("full_name, xp, level")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (!data) return;
-        if (data.full_name) setProfileName(data.full_name);
-        if (data.xp !== undefined) setXp(data.xp);
-        if (data.level !== undefined) setLevel(data.level);
-      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -195,17 +197,16 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     .join("")
     .toUpperCase();
 
+  // xp = XP dentro do nível atual (reseta ao subir de nível)
+  // nextLevelXP = threshold do nível atual
   const nextLevelXP = level * 100;
   const xpProgress = Math.min((xp / nextLevelXP) * 100, 100);
 
-  // Card de perfil expandido
   const ProfileExpanded = () => (
     <div
       className={`rounded-xl border ${planCfg.border} bg-sidebar-accent/40 p-3 space-y-3 transition-colors duration-300`}
     >
-      {/* Linha superior: avatar + nome + badge plano */}
       <div className="flex items-center gap-2.5">
-        {/* Avatar com ring de XP */}
         <div className="relative shrink-0" style={{ width: 38, height: 38 }}>
           <XPRing progress={xpProgress} planFamily={planFamily} size={38} />
           <div
@@ -219,16 +220,12 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
             {initials}
           </div>
         </div>
-
-        {/* Nome e email */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate leading-tight">
             {fullName.split(" ").slice(0, 2).join(" ")}
           </p>
           <p className="text-[10px] text-muted-foreground truncate">{email}</p>
         </div>
-
-        {/* Badge de plano */}
         <span
           className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${planCfg.bg} ${planCfg.color} ${planCfg.border}`}
         >
@@ -236,12 +233,12 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         </span>
       </div>
 
-      {/* Linha de XP */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground font-medium">
             Nível {level}
           </span>
+          {/* Mostra XP do nível atual / threshold */}
           <span className="text-[10px] text-muted-foreground font-mono">
             {xp} / {nextLevelXP} XP
           </span>
@@ -256,11 +253,14 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
             }}
           />
         </div>
+        {/* XP total — contexto para o usuário entender o ranking */}
+        <p className="text-[10px] text-muted-foreground/60 text-right font-mono">
+          {xpTotal.toLocaleString("pt-BR")} XP total
+        </p>
       </div>
     </div>
   );
 
-  // Avatar colapsado com tooltip completo
   const ProfileCollapsed = () => (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -277,7 +277,6 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
             >
               {initials}
             </div>
-            {/* Mini badge de plano no canto */}
             <div
               className={`absolute -bottom-1 -right-1 text-[8px] font-bold px-1 rounded-full border ${planCfg.bg} ${planCfg.color} ${planCfg.border} leading-4`}
             >
@@ -294,6 +293,9 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         <span className={`text-xs font-medium mt-0.5 ${planCfg.color}`}>
           Plano {planCfg.label} · Nível {level}
         </span>
+        <span className="text-xs text-muted-foreground font-mono">
+          {xpTotal.toLocaleString("pt-BR")} XP total
+        </span>
       </TooltipContent>
     </Tooltip>
   );
@@ -306,13 +308,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         ${collapsed ? "w-[64px]" : "w-[240px]"}
       `}
     >
-      {/* Botão de colapsar */}
       <button
         onClick={onToggle}
         className="
           absolute -right-3 top-[60px] z-20
-          h-6 w-6 rounded-full
-          bg-sidebar border border-border
+          h-6 w-6 rounded-full bg-sidebar border border-border
           flex items-center justify-center
           text-muted-foreground hover:text-foreground
           hover:border-primary/50 hover:shadow-[0_0_8px_hsl(153_100%_50%/0.3)]
@@ -328,11 +328,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
 
       {/* Logo */}
       <div
-        className={`
-          flex items-center border-b border-border shrink-0
-          transition-all duration-300
-          ${collapsed ? "justify-center px-0 py-4" : "gap-3 px-5 py-4"}
-        `}
+        className={`flex items-center border-b border-border shrink-0 transition-all duration-300 ${collapsed ? "justify-center px-0 py-4" : "gap-3 px-5 py-4"}`}
       >
         <img
           src={logoTrilha}
@@ -389,7 +385,6 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
 
       {/* Footer */}
       <div className="px-2 pb-4 pt-2 border-t border-border space-y-0.5 shrink-0">
-        {/* Toggle de tema */}
         {collapsed ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -422,20 +417,15 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
             </div>
             <div
-              className={`w-8 h-4 rounded-full transition-colors duration-300 relative ${
-                theme === "dark" ? "bg-muted" : "bg-primary"
-              }`}
+              className={`w-8 h-4 rounded-full transition-colors duration-300 relative ${theme === "dark" ? "bg-muted" : "bg-primary"}`}
             >
               <div
-                className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all duration-300 ${
-                  theme === "dark" ? "left-0.5" : "left-4"
-                }`}
+                className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all duration-300 ${theme === "dark" ? "left-0.5" : "left-4"}`}
               />
             </div>
           </button>
         )}
 
-        {/* Botão sair */}
         <AlertDialog>
           {collapsed ? (
             <Tooltip>
