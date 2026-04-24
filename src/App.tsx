@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { Analytics } from "@vercel/analytics/react";
 
 // Layouts
 import PublicLayout from "@/components/PublicLayout";
@@ -86,6 +87,7 @@ const App = () => (
               {/* ── 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Analytics />
           </SubscriptionProvider>
         </AuthProvider>
       </BrowserRouter>
